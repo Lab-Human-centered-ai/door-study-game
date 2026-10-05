@@ -1,0 +1,4 @@
+const {test}=require('node:test'),assert=require('node:assert/strict');
+const core=require('../docs/core.js');
+test('seeded mazes have a reachable far exit and valid paths',()=>{for(let seed=0;seed<100;seed++){const a=core.maze(core.rng(seed)),b=core.maze(core.rng(seed));assert.deepEqual(a,b);const path=core.path(a.grid,[0,0],a.goal);assert.ok(path.length>10);for(let i=1;i<path.length;i++)assert.equal(Math.abs(path[i][0]-path[i-1][0])+Math.abs(path[i][1]-path[i-1][1]),1);}});
+test('decision applies health penalty before recording, scores correctness independently of compliance',()=>{assert.deepEqual(core.decision(100,0,'left','right','left',5),{correct:false,compliance:true,health_before:100,health_after:95,score:0});assert.equal(core.decision(3,20,'left','right','right',5).health_after,0);const win=core.decision(95,20,'right','right','left',5);assert.equal(win.score,30);assert.equal(win.health_after,95);assert.equal(win.compliance,false);});
