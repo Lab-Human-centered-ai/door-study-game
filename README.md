@@ -9,3 +9,7 @@ Online game: https://lab-human-centered-ai.github.io/door-study-game/
 ## Files
 
 - `docs/`: all website files and original portrait assets.
+
+## UI update (web-1.1.0)
+
+The welcome screen introduces the objective as a short narrative while preserving explicit consent. Pursuit now runs 35% faster (`650 / 1.35` ms per step). Guide portraits are enlarged, the corridor keeps its original colors, and the hallway countdown highlights the final ten seconds. Digital Pursuit loops from Start through the entire run, with a mute toggle, and stops when the run ends. The final screen highlights the wait-for-save instruction and changes to a completion message only after the logger confirms receipt from Google Sheets.

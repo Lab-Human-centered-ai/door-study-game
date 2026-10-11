@@ -1,7 +1,31 @@
 'use strict';
 const $=id=>document.getElementById(id), cfg=window.STUDY_CONFIG;
-const logger=new StudyLogger(cfg.endpoint,s=>$('save-status').textContent=s);
-if(!cfg.endpoint)$('finish-save-help').textContent='This is a preview run. Download a data backup to keep your results.';
+function updateSaveStatus(message){
+  $('save-status').textContent=message;
+  $('finish-save-status').textContent=message;
+  const saved=Boolean(cfg.endpoint)&&message.startsWith('Saved to Google Sheets.');
+  $('save-beacon').classList.toggle('saved',saved);
+  $('finish-save-title').textContent=saved?'SAVE COMPLETE — YOU MAY LEAVE':cfg.endpoint?'DO NOT LEAVE THIS TAB':'PREVIEW RUN — KEEP A BACKUP';
+  $('finish-save-help').textContent=saved?'Your study data has been received. Thank you for staying.':cfg.endpoint?'Keep this tab open until SAVE COMPLETE appears. Saving retries automatically; if it cannot finish, download a data backup below.':'This preview is not connected to Google Sheets. Download a data backup to keep your results.';
+  $('again').disabled=Boolean(cfg.endpoint)&&!saved;
+}
+const logger=new StudyLogger(cfg.endpoint,updateSaveStatus);
+const soundtrack=$('soundtrack');
+soundtrack.volume=0.45;
+function playMusic(){
+  const attempt=soundtrack.play();
+  if(attempt)attempt.then(()=>{$('audio-status').hidden=true;}).catch(()=>{
+    $('audio-status').textContent='Music could not start. Use Enable music to try again.';
+    $('audio-status').hidden=false;
+    $('mute').textContent='Enable music';
+  });
+}
+$('mute').onclick=()=>{
+  if(soundtrack.paused){soundtrack.muted=false;playMusic();}
+  else soundtrack.muted=!soundtrack.muted;
+  $('mute').textContent=soundtrack.muted?'Unmute music':'Mute music';
+  $('mute').setAttribute('aria-pressed',String(soundtrack.muted));
+};
 let run=null,phase='welcome',round=0,trial=0,health=100,score=0,random,world,player,enemy,moves,bumps,mazeStart,enemyAt,moveAt=0,deadline,shownAt,promptData,order,hiddenAt=null,hiddenMs=0,trialHiddenStart=0;
 const held=new Set(),vectors={left:[-1,0],right:[1,0],up:[0,-1],down:[0,1]};
 const assets=Object.fromEntries('MFN'.split('').flatMap(g=>[1,2,3].map(n=>{const name=g+n+'.png',img=new Image();img.src='assets/assistants/'+name;return [name,img];})));
@@ -15,6 +39,7 @@ function snapshot(){return {...run,score,health,round:round+1,trial,elapsed_ms:M
 function record(type,extra={}){if(!run)return;run.sequence++;const event={event_id:crypto.randomUUID(),session_id:run.session_id,participant_id:run.participant_id,study_id:cfg.studyId,version:cfg.version,sequence:run.sequence,event_type:type,client_time:new Date().toISOString(),elapsed_ms:Math.round(performance.now()-run.startedMono),round:round+1,trial,score,health,...extra};logger.add(event,snapshot());}
 function start(){
   if(!ready||!$('consent').checked)return;
+  soundtrack.currentTime=0;playMusic();document.body.classList.add('playing');
   const seed=crypto.getRandomValues(new Uint32Array(1))[0];random=GameCore.rng(seed);
   const sequences=['MFN','MNF','FMN','FNM','NMF','NFM'];const sequence=cfg.genderSequence==='random'?sequences[Math.floor(random()*6)]:cfg.genderSequence;
   const condition=cfg.prompts[Math.floor(random()*cfg.prompts.length)];
@@ -37,14 +62,14 @@ function nextPrompt(){
   requestAnimationFrame(()=>requestAnimationFrame(()=>{if(phase!=='rendering')return;shownAt=performance.now();trialHiddenStart=hiddenTotal();phase='choice';record('prompt_shown',{...promptData,time_remaining_ms:Math.max(0,Math.round(deadline-shownAt))});document.querySelectorAll('[data-choice]').forEach(b=>b.disabled=false);}));
 }
 function choose(choice,input){if(phase!=='choice')return;const now=performance.now();if(now>=deadline){finish('timeout');return;}phase='feedback';const result=GameCore.decision(health,score,choice,promptData.correct_door,promptData.agent_suggestion,cfg.wrongPenalty),rt=Math.round(now-shownAt);health=result.health_after;score=result.score;run.decisions++;run.correct_count+=Number(result.correct);run.followed_count+=Number(result.compliance);run.reaction_total_ms+=rt;record('decision',{...promptData,...result,player_choice:choice,input_method:input,reaction_time_ms:rt,hidden_during_prompt_ms:Math.round(hiddenTotal()-trialHiddenStart),time_remaining_ms:Math.max(0,Math.round(deadline-now))});document.querySelectorAll('[data-choice]').forEach(b=>b.disabled=true);$('feedback').textContent=result.correct?'Correct door. +10 points.':`Wrong door. −${cfg.wrongPenalty} health.`;if(health<=0){finish('health_depleted');return;}setTimeout(()=>{if(phase==='feedback')nextPrompt();},350);}
-function finish(reason){if(!run||phase==='ended')return;const previous=phase;phase='ended';held.clear();run.status=reason;run.ended_at=new Date().toISOString();record('session_end',{...(previous==='choice'?promptData:{}),details:JSON.stringify({reason,phase:previous,maze_moves:moves,wall_attempts:bumps})});$('play').hidden=true;$('result').hidden=false;$('result-title').textContent=reason==='completed'?'All hallways complete!':'Run finished';$('result-detail').textContent=`${score} points · ${run.decisions} choices · ${Math.round((performance.now()-run.startedMono)/1000)} seconds · ${reason.replaceAll('_',' ')}`;logger.flush();}
+function finish(reason){if(!run||phase==='ended')return;const previous=phase;phase='ended';held.clear();soundtrack.pause();soundtrack.currentTime=0;document.body.classList.remove('playing');run.status=reason;run.ended_at=new Date().toISOString();record('session_end',{...(previous==='choice'?promptData:{}),details:JSON.stringify({reason,phase:previous,maze_moves:moves,wall_attempts:bumps})});$('play').hidden=true;$('result').hidden=false;$('result-title').textContent='Thank you for participating.';$('result-detail').textContent='Your participation in this HCI research study helps us understand how people make decisions with an assistant.';logger.flush();}
 $('start').onclick=start;$('quit').onclick=()=>finish('quit');$('again').onclick=()=>{$('result').hidden=true;$('welcome').hidden=false;phase='welcome';run=null;};$('download').onclick=()=>logger.download();$('retry').onclick=()=>logger.flush();
 document.querySelectorAll('[data-choice]').forEach(b=>b.onclick=e=>choose(b.dataset.choice,e.detail===0?'keyboard_button':'pointer'));
 document.querySelectorAll('[data-move]').forEach(b=>{b.onpointerdown=e=>{e.preventDefault();held.add(b.dataset.move);b.setPointerCapture(e.pointerId);move(b.dataset.move);};b.onpointerup=b.onpointercancel=()=>held.delete(b.dataset.move);});
 addEventListener('keydown',e=>{const dir={ArrowLeft:'left',ArrowRight:'right',ArrowUp:'up',ArrowDown:'down'}[e.key];if(!dir||!['maze','choice','feedback','rendering'].includes(phase))return;e.preventDefault();if(phase==='maze'){held.add(dir);move(dir);}else if(!e.repeat&&(dir==='left'||dir==='right'))choose(dir,'keyboard');});addEventListener('keyup',e=>held.delete(e.key.replace('Arrow','').toLowerCase()));addEventListener('blur',()=>held.clear());
 document.addEventListener('visibilitychange',()=>{held.clear();if(!run||phase==='ended')return;if(document.hidden){hiddenAt=performance.now();record('tab_hidden');logger.flush();}else{if(hiddenAt!==null)hiddenMs+=performance.now()-hiddenAt;hiddenAt=null;record('tab_visible');}});
 addEventListener('pagehide',()=>{if(run&&phase!=='ended'){record('page_exit',{details:'Last observed exit; not proof of final abandonment.'});} /* outbox was synchronously persisted; next visit retries it */ });
-let heartbeat=0;setInterval(()=>{if(!run||phase==='ended'||phase==='welcome')return;const now=performance.now();$('stage').textContent=`Hallway ${round+1}/${cfg.roundTimes.length} · ${phase==='maze'?'Maze':`Choice ${trial}/9`}`;$('score').textContent=`Score ${score}`;$('health').textContent=`Health ${health}`;$('timer').textContent=phase==='maze'?'Reach the exit':`${Math.max(0,Math.ceil((deadline-now)/1000))}s left`;
+let heartbeat=0;setInterval(()=>{if(!run||phase==='ended'||phase==='welcome')return;const now=performance.now();$('stage').textContent=`Hallway ${round+1}/${cfg.roundTimes.length} · ${phase==='maze'?'Maze':`Choice ${trial}/9`}`;$('score').textContent=`Score ${score}`;$('health').textContent=`Health ${health}`;const seconds=Math.max(0,Math.ceil((deadline-now)/1000));$('timer').textContent=phase==='maze'?'REACH THE EXIT':`${seconds}s LEFT`;$('timer').classList.toggle('urgent',phase!=='maze'&&seconds<=10);$('timer').classList.toggle('maze-hint',phase==='maze');
   if(phase==='maze'){if(held.size)move(held.values().next().value);if(phase==='maze'&&enemyAt!==null&&now-enemyAt>=cfg.enemyDelayMs){enemy=GameCore.path(world.grid,enemy,player)[1]||enemy;enemyAt=now;draw();if(enemy.toString()===player.toString())finish('caught');}}
   else if(now>=deadline&&phase!=='ended')finish('timeout');
   if(now-heartbeat>15000&&phase!=='ended'){heartbeat=now;record('heartbeat',{details:JSON.stringify({phase,maze_moves:moves,wall_attempts:bumps})});}
