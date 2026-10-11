@@ -13,3 +13,7 @@ Online game: https://lab-human-centered-ai.github.io/door-study-game/
 ## UI update (web-1.1.0)
 
 The welcome screen introduces the objective as a short narrative while preserving explicit consent. Pursuit now runs 35% faster (`650 / 1.35` ms per step). Guide portraits are enlarged, the corridor keeps its original colors, and the hallway countdown highlights the final ten seconds. Digital Pursuit loops from Start through the entire run, with a mute toggle, and stops when the run ends. The final screen highlights the wait-for-save instruction and changes to a completion message only after the logger confirms receipt from Google Sheets.
+
+## Follow-up (web-1.2.0)
+
+Guide portraits retain their full height at the enlarged size, with vertical scrolling on smaller screens. The introduction uses rhyme without describing advice accuracy. Pursuit now uses a 320 ms step delay, about 50% faster than web-1.1.0. The final save screen counts down the actual upload/receipt timeout and the 15-second retry wait, rather than estimating successful completion. Failed saves offer a backup download and ask participants to email it to lab.human.centered.ai@gmail.com. Confirmed batches drain immediately; success still requires a matching receipt for every queued batch.

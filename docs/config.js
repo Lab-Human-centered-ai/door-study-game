@@ -2,9 +2,9 @@
 window.STUDY_CONFIG = {
   endpoint: "https://script.google.com/macros/s/AKfycbxd498n39hAo0kjajrbatNMWMi-LHajItmU-E8r7EW1SVUA4BpGjHTquWZPweCLaJbtqQ/exec",
   studyId: "prompt-study-v1",
-  version: "web-1.1.0",
+  version: "web-1.2.0",
   roundTimes: [90, 60, 40], // Seconds per hallway, AFTER finishing the maze.
-  enemyDelayMs: 650 / 1.35, // 35% faster than the original easy pace.
+  enemyDelayMs: 320, // About 50% faster than the previous 481 ms pace.
   wrongPenalty: 5,
   agentAccuracy: 50, // Probability of truthful advice: 0 to 100.
   genderSequence: "random", // random or MFN, MNF, FMN, FNM, NMF, NFM

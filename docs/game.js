@@ -1,13 +1,27 @@
 'use strict';
 const $=id=>document.getElementById(id), cfg=window.STUDY_CONFIG;
-function updateSaveStatus(message){
+let saveState={state:'idle',deadline:null,failed:false};
+function renderSaveCountdown(){
+  const active=Boolean(cfg.endpoint)&&Boolean(saveState.deadline);
+  $('save-countdown').hidden=!active;
+  if(active){
+    const seconds=Math.max(0,Math.ceil((saveState.deadline-Date.now())/1000));
+    const label=saveState.state==='retry'?'Next save attempt in':saveState.state==='confirming'?'Confirmation check ends in':'Upload attempt ends in';
+    $('save-countdown').textContent=`${label} ${seconds}s`;
+  }
+}
+setInterval(renderSaveCountdown,250);
+function updateSaveStatus(message,state){
+  if(state)saveState=state;
   $('save-status').textContent=message;
   $('finish-save-status').textContent=message;
   const saved=Boolean(cfg.endpoint)&&message.startsWith('Saved to Google Sheets.');
   $('save-beacon').classList.toggle('saved',saved);
-  $('finish-save-title').textContent=saved?'SAVE COMPLETE — YOU MAY LEAVE':cfg.endpoint?'DO NOT LEAVE THIS TAB':'PREVIEW RUN — KEEP A BACKUP';
+  $('finish-save-title').textContent=saved?'SAVE COMPLETE. YOU MAY LEAVE':cfg.endpoint?'DO NOT LEAVE THIS TAB':'PREVIEW RUN. KEEP A BACKUP';
   $('finish-save-help').textContent=saved?'Your study data has been received. Thank you for staying.':cfg.endpoint?'Keep this tab open until SAVE COMPLETE appears. Saving retries automatically; if it cannot finish, download a data backup below.':'This preview is not connected to Google Sheets. Download a data backup to keep your results.';
   $('again').disabled=Boolean(cfg.endpoint)&&!saved;
+  $('save-fallback').hidden=saved||!saveState.failed;
+  renderSaveCountdown();
 }
 const logger=new StudyLogger(cfg.endpoint,updateSaveStatus);
 const soundtrack=$('soundtrack');
@@ -63,7 +77,7 @@ function nextPrompt(){
 }
 function choose(choice,input){if(phase!=='choice')return;const now=performance.now();if(now>=deadline){finish('timeout');return;}phase='feedback';const result=GameCore.decision(health,score,choice,promptData.correct_door,promptData.agent_suggestion,cfg.wrongPenalty),rt=Math.round(now-shownAt);health=result.health_after;score=result.score;run.decisions++;run.correct_count+=Number(result.correct);run.followed_count+=Number(result.compliance);run.reaction_total_ms+=rt;record('decision',{...promptData,...result,player_choice:choice,input_method:input,reaction_time_ms:rt,hidden_during_prompt_ms:Math.round(hiddenTotal()-trialHiddenStart),time_remaining_ms:Math.max(0,Math.round(deadline-now))});document.querySelectorAll('[data-choice]').forEach(b=>b.disabled=true);$('feedback').textContent=result.correct?'Correct door. +10 points.':`Wrong door. −${cfg.wrongPenalty} health.`;if(health<=0){finish('health_depleted');return;}setTimeout(()=>{if(phase==='feedback')nextPrompt();},350);}
 function finish(reason){if(!run||phase==='ended')return;const previous=phase;phase='ended';held.clear();soundtrack.pause();soundtrack.currentTime=0;document.body.classList.remove('playing');run.status=reason;run.ended_at=new Date().toISOString();record('session_end',{...(previous==='choice'?promptData:{}),details:JSON.stringify({reason,phase:previous,maze_moves:moves,wall_attempts:bumps})});$('play').hidden=true;$('result').hidden=false;$('result-title').textContent='Thank you for participating.';$('result-detail').textContent='Your participation in this HCI research study helps us understand how people make decisions with an assistant.';logger.flush();}
-$('start').onclick=start;$('quit').onclick=()=>finish('quit');$('again').onclick=()=>{$('result').hidden=true;$('welcome').hidden=false;phase='welcome';run=null;};$('download').onclick=()=>logger.download();$('retry').onclick=()=>logger.flush();
+$('start').onclick=start;$('quit').onclick=()=>finish('quit');$('again').onclick=()=>{$('result').hidden=true;$('welcome').hidden=false;phase='welcome';run=null;};$('download').onclick=$('finish-download').onclick=()=>logger.download();$('retry').onclick=()=>logger.flush();
 document.querySelectorAll('[data-choice]').forEach(b=>b.onclick=e=>choose(b.dataset.choice,e.detail===0?'keyboard_button':'pointer'));
 document.querySelectorAll('[data-move]').forEach(b=>{b.onpointerdown=e=>{e.preventDefault();held.add(b.dataset.move);b.setPointerCapture(e.pointerId);move(b.dataset.move);};b.onpointerup=b.onpointercancel=()=>held.delete(b.dataset.move);});
 addEventListener('keydown',e=>{const dir={ArrowLeft:'left',ArrowRight:'right',ArrowUp:'up',ArrowDown:'down'}[e.key];if(!dir||!['maze','choice','feedback','rendering'].includes(phase))return;e.preventDefault();if(phase==='maze'){held.add(dir);move(dir);}else if(!e.repeat&&(dir==='left'||dir==='right'))choose(dir,'keyboard');});addEventListener('keyup',e=>held.delete(e.key.replace('Arrow','').toLowerCase()));addEventListener('blur',()=>held.clear());
