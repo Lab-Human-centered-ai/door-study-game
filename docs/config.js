@@ -2,7 +2,7 @@
 window.STUDY_CONFIG = {
   endpoint: "https://script.google.com/macros/s/AKfycbxd498n39hAo0kjajrbatNMWMi-LHajItmU-E8r7EW1SVUA4BpGjHTquWZPweCLaJbtqQ/exec",
   studyId: "prompt-study-v1",
-  version: "web-1.4.0",
+  version: "web-1.5.0",
   roundTimes: [90, 60, 40], // Seconds per hallway, AFTER finishing the maze.
   enemyDelayMs: 320, // Starting pursuit pace.
   enemySprintDelayMs: 120, // Faster pursuit after halfway to the exit.

@@ -25,3 +25,7 @@ The introduction returns to a concise maze-and-chase narrative. The guide is fra
 ## Follow-up (web-1.4.0)
 
 The game retains three hallways with 90, 60, and 40 second limits after their mazes. Digital Pursuit loops until the run ends. The supplied swipe effect plays once when the player is caught or health reaches zero, but not on completion, timeout, or quitting. The audio toggle mutes both music and effects, and a new run resets both tracks.
+
+## Follow-up (web-1.5.0)
+
+Music is preloaded from a 3.3 MB AAC copy (with the original WAV as fallback). Start becomes available after images and music are ready, and the run begins only after the browser confirms playback. Playback failure leaves the participant on the welcome screen with a retry message. The complete assistant image extends beneath the hallway scene; knees align with its bottom edge, and the portrait wrapper no longer clips the legs above the door controls.

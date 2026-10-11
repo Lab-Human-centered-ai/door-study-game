@@ -28,3 +28,13 @@ header{transition:margin .2s}body.playing main{padding-top:16px}body.playing hea
 body.playing main{padding-top:10px}body.playing header{margin-bottom:8px}body.playing header .eyebrow{display:none}body.playing header h1{font-size:26px;margin:0}
 body.playing .stats{margin:10px 0}.hallway .doors{margin-top:18px}.hallway #feedback{margin-top:8px}
 @media(max-width:500px){.hallway{--portrait-height:clamp(250px,calc(100dvh - 430px),340px)}}
+
+/* The full image extends below the scene; only the scene edge clips the legs. */
+.hallway{height:clamp(440px,calc(100dvh - 250px),650px)}
+.hallway .portrait{position:absolute;inset:80px 0 0;height:auto;margin:0;overflow:visible;pointer-events:none}
+.hallway #agent{height:132%;width:auto;max-width:none;object-fit:contain}
+.hallway #agent-name{position:absolute;left:26px;bottom:118px;margin:0}
+.hallway .doors{position:absolute;left:26px;right:26px;bottom:48px;margin:0;z-index:2}
+.hallway .doors button{width:40%}
+.hallway #feedback{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);margin:0;white-space:nowrap}
+@media(max-width:500px){.hallway{height:clamp(440px,calc(100dvh - 300px),590px)}.hallway .portrait{top:100px}.hallway .doors{left:14px;right:14px;bottom:42px}.hallway .doors button{width:43%}.hallway #agent-name{left:14px;bottom:108px}}

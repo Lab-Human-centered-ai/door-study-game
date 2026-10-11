@@ -27,13 +27,17 @@ const logger=new StudyLogger(cfg.endpoint,updateSaveStatus);
 const soundtrack=$('soundtrack'),lossSound=$('loss-sound');
 lossSound.volume=0.7;
 soundtrack.volume=0.45;
-function playMusic(){
-  const attempt=soundtrack.play();
-  if(attempt)attempt.then(()=>{$('audio-status').hidden=true;}).catch(()=>{
+async function playMusic(){
+  try{
+    await soundtrack.play();
+    $('audio-status').hidden=true;
+    return true;
+  }catch{
     $('audio-status').textContent='Music could not start. Use Enable audio to try again.';
     $('audio-status').hidden=false;
     $('mute').textContent='Enable audio';
-  });
+    return false;
+  }
 }
 $('mute').onclick=()=>{
   if(soundtrack.paused){soundtrack.muted=false;playMusic();}
@@ -45,17 +49,32 @@ $('mute').onclick=()=>{
 let run=null,phase='welcome',round=0,trial=0,health=100,score=0,random,world,player,enemy,moves,bumps,mazeStart,mazePathLength,pursuitAt=null,enemyAt,moveAt=0,deadline,shownAt,promptData,order,hiddenAt=null,hiddenMs=0,trialHiddenStart=0;
 const held=new Set(),vectors={left:[-1,0],right:[1,0],up:[0,-1],down:[0,1]};
 const assets=Object.fromEntries('MFN'.split('').flatMap(g=>[1,2,3].map(n=>{const name=g+n+'.png',img=new Image();img.src='assets/assistants/'+name;return [name,img];})));
-let ready=false;
-Promise.all(Object.values(assets).map(img=>img.decode())).then(()=>{ready=true;enable();}).catch(()=>{$('setup').textContent='Agent images could not load. Reload the page before starting.';});
-$('setup').textContent=cfg.endpoint?'Your decisions will be saved to the study’s Google Sheet.':'Preview mode: Google Sheets is not connected yet. You can play and download a backup.';
-function enable(){$('start').disabled=!ready||!$('consent').checked;}
+let ready=false,starting=false;
+const setupMessage=cfg.endpoint?'Your decisions will be saved to the study’s Google Sheet.':'Preview mode: Google Sheets is not connected yet. You can play and download a backup.';
+$('setup').textContent='Loading game images and music…';
+const musicReady=new Promise((resolve,reject)=>{
+  if(soundtrack.readyState>=4){resolve();return;}
+  soundtrack.addEventListener('canplaythrough',resolve,{once:true});
+  soundtrack.addEventListener('error',reject,{once:true});
+});
+Promise.all([...Object.values(assets).map(img=>img.decode()),musicReady]).then(()=>{
+  ready=true;$('setup').textContent=setupMessage;enable();
+}).catch(()=>{$('setup').textContent='Game images or music could not load. Please reload before starting.';});
+function enable(){$('start').disabled=!ready||starting||!$('consent').checked;}
 $('consent').onchange=enable;
 function hiddenTotal(){return hiddenMs+(hiddenAt===null?0:performance.now()-hiddenAt);}
 function snapshot(){return {...run,score,health,round:round+1,trial,elapsed_ms:Math.round(performance.now()-run.startedMono),hidden_ms:Math.round(hiddenTotal()),startedMono:undefined,config:JSON.stringify(run.settings)};}
 function record(type,extra={}){if(!run)return;run.sequence++;const event={event_id:crypto.randomUUID(),session_id:run.session_id,participant_id:run.participant_id,study_id:cfg.studyId,version:cfg.version,sequence:run.sequence,event_type:type,client_time:new Date().toISOString(),elapsed_ms:Math.round(performance.now()-run.startedMono),round:round+1,trial,score,health,...extra};logger.add(event,snapshot());}
-function start(){
-  if(!ready||!$('consent').checked)return;
-  lossSound.pause();lossSound.currentTime=0;soundtrack.currentTime=0;playMusic();document.body.classList.add('playing');
+async function start(){
+  if(!ready||starting||phase!=='welcome'||!$('consent').checked)return;
+  starting=true;enable();$('start').textContent='Starting music…';
+  lossSound.pause();lossSound.currentTime=0;soundtrack.currentTime=0;
+  const playing=await playMusic();
+  starting=false;$('start').textContent='Start game →';enable();
+  if(!playing){$('setup').textContent='Music could not start. Press Start game to try again.';return;}
+  $('setup').textContent=setupMessage;
+  $('mute').textContent=soundtrack.muted?'Unmute audio':'Mute audio';
+  document.body.classList.add('playing');
   const seed=crypto.getRandomValues(new Uint32Array(1))[0];random=GameCore.rng(seed);
   const sequences=['MFN','MNF','FMN','FNM','NMF','NFM'];const sequence=cfg.genderSequence==='random'?sequences[Math.floor(random()*6)]:cfg.genderSequence;
   const condition=cfg.prompts[Math.floor(random()*cfg.prompts.length)];
