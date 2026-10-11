@@ -24,20 +24,22 @@ function updateSaveStatus(message,state){
   renderSaveCountdown();
 }
 const logger=new StudyLogger(cfg.endpoint,updateSaveStatus);
-const soundtrack=$('soundtrack');
+const soundtrack=$('soundtrack'),lossSound=$('loss-sound');
+lossSound.volume=0.7;
 soundtrack.volume=0.45;
 function playMusic(){
   const attempt=soundtrack.play();
   if(attempt)attempt.then(()=>{$('audio-status').hidden=true;}).catch(()=>{
-    $('audio-status').textContent='Music could not start. Use Enable music to try again.';
+    $('audio-status').textContent='Music could not start. Use Enable audio to try again.';
     $('audio-status').hidden=false;
-    $('mute').textContent='Enable music';
+    $('mute').textContent='Enable audio';
   });
 }
 $('mute').onclick=()=>{
   if(soundtrack.paused){soundtrack.muted=false;playMusic();}
   else soundtrack.muted=!soundtrack.muted;
-  $('mute').textContent=soundtrack.muted?'Unmute music':'Mute music';
+  lossSound.muted=soundtrack.muted;
+  $('mute').textContent=soundtrack.muted?'Unmute audio':'Mute audio';
   $('mute').setAttribute('aria-pressed',String(soundtrack.muted));
 };
 let run=null,phase='welcome',round=0,trial=0,health=100,score=0,random,world,player,enemy,moves,bumps,mazeStart,mazePathLength,pursuitAt=null,enemyAt,moveAt=0,deadline,shownAt,promptData,order,hiddenAt=null,hiddenMs=0,trialHiddenStart=0;
@@ -53,7 +55,7 @@ function snapshot(){return {...run,score,health,round:round+1,trial,elapsed_ms:M
 function record(type,extra={}){if(!run)return;run.sequence++;const event={event_id:crypto.randomUUID(),session_id:run.session_id,participant_id:run.participant_id,study_id:cfg.studyId,version:cfg.version,sequence:run.sequence,event_type:type,client_time:new Date().toISOString(),elapsed_ms:Math.round(performance.now()-run.startedMono),round:round+1,trial,score,health,...extra};logger.add(event,snapshot());}
 function start(){
   if(!ready||!$('consent').checked)return;
-  soundtrack.currentTime=0;playMusic();document.body.classList.add('playing');
+  lossSound.pause();lossSound.currentTime=0;soundtrack.currentTime=0;playMusic();document.body.classList.add('playing');
   const seed=crypto.getRandomValues(new Uint32Array(1))[0];random=GameCore.rng(seed);
   const sequences=['MFN','MNF','FMN','FNM','NMF','NFM'];const sequence=cfg.genderSequence==='random'?sequences[Math.floor(random()*6)]:cfg.genderSequence;
   const condition=cfg.prompts[Math.floor(random()*cfg.prompts.length)];
@@ -90,7 +92,7 @@ function nextPrompt(){
   requestAnimationFrame(()=>requestAnimationFrame(()=>{if(phase!=='rendering')return;shownAt=performance.now();trialHiddenStart=hiddenTotal();phase='choice';record('prompt_shown',{...promptData,time_remaining_ms:Math.max(0,Math.round(deadline-shownAt))});document.querySelectorAll('[data-choice]').forEach(b=>b.disabled=false);}));
 }
 function choose(choice,input){if(phase!=='choice')return;const now=performance.now();if(now>=deadline){finish('timeout');return;}phase='feedback';const result=GameCore.decision(health,score,choice,promptData.correct_door,promptData.agent_suggestion,cfg.wrongPenalty),rt=Math.round(now-shownAt);health=result.health_after;score=result.score;run.decisions++;run.correct_count+=Number(result.correct);run.followed_count+=Number(result.compliance);run.reaction_total_ms+=rt;record('decision',{...promptData,...result,player_choice:choice,input_method:input,reaction_time_ms:rt,hidden_during_prompt_ms:Math.round(hiddenTotal()-trialHiddenStart),time_remaining_ms:Math.max(0,Math.round(deadline-now))});document.querySelectorAll('[data-choice]').forEach(b=>b.disabled=true);$('feedback').textContent=result.correct?'Correct door. +10 points.':`Wrong door. −${cfg.wrongPenalty} health.`;if(health<=0){finish('health_depleted');return;}setTimeout(()=>{if(phase==='feedback')nextPrompt();},350);}
-function finish(reason){if(!run||phase==='ended')return;const previous=phase;phase='ended';held.clear();soundtrack.pause();soundtrack.currentTime=0;document.body.classList.remove('playing');run.status=reason;run.ended_at=new Date().toISOString();record('session_end',{...(previous==='choice'?promptData:{}),details:JSON.stringify({reason,phase:previous,maze_moves:moves,wall_attempts:bumps})});$('play').hidden=true;$('result').hidden=false;$('result-title').textContent='Thank you for participating.';$('result-detail').textContent='Your participation in this HCI research study helps us understand how people make decisions with an assistant.';logger.flush();}
+function finish(reason){if(!run||phase==='ended')return;const previous=phase;const playLoss=reason==='caught'||reason==='health_depleted';phase='ended';held.clear();soundtrack.pause();if(playLoss){lossSound.currentTime=0;lossSound.muted=soundtrack.muted;lossSound.play().catch(()=>{});}soundtrack.currentTime=0;document.body.classList.remove('playing');run.status=reason;run.ended_at=new Date().toISOString();record('session_end',{...(previous==='choice'?promptData:{}),details:JSON.stringify({reason,phase:previous,maze_moves:moves,wall_attempts:bumps})});$('play').hidden=true;$('result').hidden=false;$('result-title').textContent='Thank you for participating.';$('result-detail').textContent='Your participation in this HCI research study helps us understand how people make decisions with an assistant.';logger.flush();}
 $('start').onclick=start;$('quit').onclick=()=>finish('quit');$('again').onclick=()=>{$('result').hidden=true;$('welcome').hidden=false;phase='welcome';run=null;};$('download').onclick=$('finish-download').onclick=()=>logger.download();$('retry').onclick=()=>logger.flush();
 document.querySelectorAll('[data-choice]').forEach(b=>b.onclick=e=>choose(b.dataset.choice,e.detail===0?'keyboard_button':'pointer'));
 document.querySelectorAll('[data-move]').forEach(b=>{b.onpointerdown=e=>{e.preventDefault();held.add(b.dataset.move);b.setPointerCapture(e.pointerId);move(b.dataset.move);};b.onpointerup=b.onpointercancel=()=>held.delete(b.dataset.move);});
