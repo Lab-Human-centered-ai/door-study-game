@@ -2,9 +2,11 @@
 window.STUDY_CONFIG = {
   endpoint: "https://script.google.com/macros/s/AKfycbxd498n39hAo0kjajrbatNMWMi-LHajItmU-E8r7EW1SVUA4BpGjHTquWZPweCLaJbtqQ/exec",
   studyId: "prompt-study-v1",
-  version: "web-1.2.0",
+  version: "web-1.3.0",
   roundTimes: [90, 60, 40], // Seconds per hallway, AFTER finishing the maze.
-  enemyDelayMs: 320, // About 50% faster than the previous 481 ms pace.
+  enemyDelayMs: 320, // Starting pursuit pace.
+  enemySprintDelayMs: 120, // Faster pursuit after halfway to the exit.
+  enemyRampMs: 2000, // Build to the faster pace over two seconds.
   wrongPenalty: 5,
   agentAccuracy: 50, // Probability of truthful advice: 0 to 100.
   genderSequence: "random", // random or MFN, MNF, FMN, FNM, NMF, NFM

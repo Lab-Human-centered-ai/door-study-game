@@ -17,3 +17,7 @@ The welcome screen introduces the objective as a short narrative while preservin
 ## Follow-up (web-1.2.0)
 
 Guide portraits retain their full height at the enlarged size, with vertical scrolling on smaller screens. The introduction uses rhyme without describing advice accuracy. Pursuit now uses a 320 ms step delay, about 50% faster than web-1.1.0. The final save screen counts down the actual upload/receipt timeout and the 15-second retry wait, rather than estimating successful completion. Failed saves offer a backup download and ask participants to email it to lab.human.centered.ai@gmail.com. Confirmed batches drain immediately; success still requires a matching receipt for every queued batch.
+
+## Follow-up (web-1.3.0)
+
+The introduction returns to a concise maze-and-chase narrative. The guide is framed around the knees, with viewport-based sizing that keeps door choices and the end-run control visible on standard laptop screens. Pursuit starts at 320 ms per step. Once the player's remaining route to the exit is at most half the initial shortest-path length, the pursuer ramps to 120 ms per step over two seconds. Acceleration stays active through backtracking and resets for each maze. A `pursuit_accelerated` event records the transition for study analysis.

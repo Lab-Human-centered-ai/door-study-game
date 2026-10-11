@@ -40,7 +40,7 @@ $('mute').onclick=()=>{
   $('mute').textContent=soundtrack.muted?'Unmute music':'Mute music';
   $('mute').setAttribute('aria-pressed',String(soundtrack.muted));
 };
-let run=null,phase='welcome',round=0,trial=0,health=100,score=0,random,world,player,enemy,moves,bumps,mazeStart,enemyAt,moveAt=0,deadline,shownAt,promptData,order,hiddenAt=null,hiddenMs=0,trialHiddenStart=0;
+let run=null,phase='welcome',round=0,trial=0,health=100,score=0,random,world,player,enemy,moves,bumps,mazeStart,mazePathLength,pursuitAt=null,enemyAt,moveAt=0,deadline,shownAt,promptData,order,hiddenAt=null,hiddenMs=0,trialHiddenStart=0;
 const held=new Set(),vectors={left:[-1,0],right:[1,0],up:[0,-1],down:[0,1]};
 const assets=Object.fromEntries('MFN'.split('').flatMap(g=>[1,2,3].map(n=>{const name=g+n+'.png',img=new Image();img.src='assets/assistants/'+name;return [name,img];})));
 let ready=false;
@@ -62,9 +62,23 @@ function start(){
   order=sequence.split('').flatMap(g=>[1,2,3].map(n=>g+n+'.png'));
   $('welcome').hidden=true;$('result').hidden=true;$('play').hidden=false;record('session_start',{details:JSON.stringify({seed,condition,gender_sequence:sequence,config:run.settings,viewport:[innerWidth,innerHeight],input:matchMedia('(pointer:coarse)').matches?'touch':'pointer_or_keyboard',consent_version:'1'})});newMaze();logger.flush();
 }
-function newMaze(){phase='maze';held.clear();trial=0;world=GameCore.maze(random);player=[0,0];enemy=[0,0];moves=0;bumps=0;mazeStart=performance.now();enemyAt=null;$('maze-panel').hidden=false;$('hall').hidden=true;record('maze_start',{details:JSON.stringify(world)});draw();}
+function newMaze(){phase='maze';held.clear();trial=0;world=GameCore.maze(random);player=[0,0];enemy=[0,0];moves=0;bumps=0;mazeStart=performance.now();enemyAt=null;pursuitAt=null;mazePathLength=GameCore.path(world.grid,player,world.goal).length-1;$('maze-instruction').textContent='Reach the blue exit. Keep moving!';$('maze-panel').hidden=false;$('hall').hidden=true;record('maze_start',{details:JSON.stringify(world)});draw();}
+function updatePursuit(now){
+  if(pursuitAt!==null)return;
+  const remaining=GameCore.path(world.grid,player,world.goal).length-1;
+  if(remaining<=mazePathLength/2){
+    pursuitAt=now;
+    $('maze-instruction').textContent="It's closing in. Keep moving toward the blue exit!";
+    record('pursuit_accelerated',{details:JSON.stringify({remaining_steps:remaining,maze_path_steps:mazePathLength,ramp_ms:cfg.enemyRampMs,target_delay_ms:cfg.enemySprintDelayMs})});
+  }
+}
+function enemyStepDelay(now){
+  if(pursuitAt===null)return cfg.enemyDelayMs;
+  const progress=Math.min(1,Math.max(0,(now-pursuitAt)/cfg.enemyRampMs));
+  return cfg.enemyDelayMs+(cfg.enemySprintDelayMs-cfg.enemyDelayMs)*progress;
+}
 function draw(){const ctx=$('maze').getContext('2d'),cell=50;world.grid.forEach((row,y)=>row.forEach((wall,x)=>{ctx.fillStyle=wall?'#172536':'#d5e4ed';ctx.fillRect(x*cell,y*cell,cell,cell);}));ctx.fillStyle='#477eff';ctx.fillRect(world.goal[0]*cell,world.goal[1]*cell,cell,cell);for(const [p,color] of [[enemy,'#f06572'],[player,'#ffd35d']]){ctx.fillStyle=color;ctx.beginPath();ctx.arc(p[0]*cell+25,p[1]*cell+25,17,0,Math.PI*2);ctx.fill();}}
-function move(dir){if(phase!=='maze')return;const now=performance.now();if(now-moveAt<90)return;moveAt=now;const v=vectors[dir],next=[player[0]+v[0],player[1]+v[1]];if(world.grid[next[1]]?.[next[0]]!==0){bumps++;return;}player=next;moves++;if(enemyAt===null)enemyAt=now;draw();if(player.toString()===enemy.toString()){finish('caught');return;}if(player.toString()===world.goal.toString()){record('maze_complete',{reaction_time_ms:Math.round(now-mazeStart),details:JSON.stringify({moves,wall_attempts:bumps,shortest_path_steps:GameCore.path(world.grid,[0,0],world.goal).length-1})});deadline=now+cfg.roundTimes[round]*1000;trial=0;nextPrompt();}}
+function move(dir){if(phase!=='maze')return;const now=performance.now();if(now-moveAt<90)return;moveAt=now;const v=vectors[dir],next=[player[0]+v[0],player[1]+v[1]];if(world.grid[next[1]]?.[next[0]]!==0){bumps++;return;}player=next;moves++;updatePursuit(now);if(enemyAt===null)enemyAt=now;draw();if(player.toString()===enemy.toString()){finish('caught');return;}if(player.toString()===world.goal.toString()){record('maze_complete',{reaction_time_ms:Math.round(now-mazeStart),details:JSON.stringify({moves,wall_attempts:bumps,shortest_path_steps:GameCore.path(world.grid,[0,0],world.goal).length-1})});deadline=now+cfg.roundTimes[round]*1000;trial=0;nextPrompt();}}
 function nextPrompt(){
   held.clear();if(performance.now()>=deadline){finish('timeout');return;}
   if(trial>=order.length){record('hallway_complete');round++;if(round>=cfg.roundTimes.length){round--;finish('completed');}else newMaze();return;}
@@ -84,7 +98,7 @@ addEventListener('keydown',e=>{const dir={ArrowLeft:'left',ArrowRight:'right',Ar
 document.addEventListener('visibilitychange',()=>{held.clear();if(!run||phase==='ended')return;if(document.hidden){hiddenAt=performance.now();record('tab_hidden');logger.flush();}else{if(hiddenAt!==null)hiddenMs+=performance.now()-hiddenAt;hiddenAt=null;record('tab_visible');}});
 addEventListener('pagehide',()=>{if(run&&phase!=='ended'){record('page_exit',{details:'Last observed exit; not proof of final abandonment.'});} /* outbox was synchronously persisted; next visit retries it */ });
 let heartbeat=0;setInterval(()=>{if(!run||phase==='ended'||phase==='welcome')return;const now=performance.now();$('stage').textContent=`Hallway ${round+1}/${cfg.roundTimes.length} · ${phase==='maze'?'Maze':`Choice ${trial}/9`}`;$('score').textContent=`Score ${score}`;$('health').textContent=`Health ${health}`;const seconds=Math.max(0,Math.ceil((deadline-now)/1000));$('timer').textContent=phase==='maze'?'REACH THE EXIT':`${seconds}s LEFT`;$('timer').classList.toggle('urgent',phase!=='maze'&&seconds<=10);$('timer').classList.toggle('maze-hint',phase==='maze');
-  if(phase==='maze'){if(held.size)move(held.values().next().value);if(phase==='maze'&&enemyAt!==null&&now-enemyAt>=cfg.enemyDelayMs){enemy=GameCore.path(world.grid,enemy,player)[1]||enemy;enemyAt=now;draw();if(enemy.toString()===player.toString())finish('caught');}}
+  if(phase==='maze'){if(held.size)move(held.values().next().value);if(phase==='maze'&&enemyAt!==null&&now-enemyAt>=enemyStepDelay(now)){enemy=GameCore.path(world.grid,enemy,player)[1]||enemy;enemyAt=now;draw();if(enemy.toString()===player.toString())finish('caught');}}
   else if(now>=deadline&&phase!=='ended')finish('timeout');
   if(now-heartbeat>15000&&phase!=='ended'){heartbeat=now;record('heartbeat',{details:JSON.stringify({phase,maze_moves:moves,wall_attempts:bumps})});}
 },40);

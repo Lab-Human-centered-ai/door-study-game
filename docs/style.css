@@ -11,14 +11,20 @@ header{transition:margin .2s}body.playing main{padding-top:16px}body.playing hea
 .countdown.urgent{background:#ffbec0;border-color:#ff737b;color:#721e2b;animation:timer-pulse 1s ease-in-out infinite}
 .hallway{position:relative;overflow:hidden;padding:12px 26px 16px;background:url('assets/hallway.png') center/cover;isolation:isolate}
 .bubble{position:relative;z-index:2;max-width:360px;min-height:0;padding:14px 20px;margin:0 auto 4px;font-size:21px;line-height:1.35;box-shadow:0 6px 20px #101c2926}
-.portrait{height:560px;overflow:visible;position:relative;margin:0 -26px}
-#agent{position:absolute;top:0;left:50%;transform:translateX(-50%);width:800px;max-width:none;height:560px;object-fit:contain;object-position:top center;margin:0}
+.portrait{height:var(--portrait-height);overflow:hidden;position:relative;margin:0 -26px}
+#agent{position:absolute;top:0;left:50%;transform:translateX(-50%);width:calc(var(--portrait-height) * 1.88);max-width:none;height:calc(var(--portrait-height) * 1.32);object-fit:contain;object-position:top center;margin:0}
 #agent-name{position:relative;display:table;margin:-12px auto 0;padding:6px 18px;border-radius:30px;background:#152638ed;color:#fff;font-size:15px;box-shadow:0 2px 12px #0003}
 .doors{position:relative;margin-top:34px;gap:32px}.doors button{background:#f6faf5;color:#152638;border:1px solid #fff;box-shadow:0 5px 16px #101c2940;min-height:54px}.doors button:hover:not(:disabled){background:#bcf5df;transform:translateY(-2px)}
 #feedback{display:table;min-height:26px;margin:12px auto 0;border-radius:8px;background:#152638eb;color:#fff;padding:2px 12px}#feedback:empty{background:none}
 .save-beacon{margin:28px 0;padding:28px 24px;background:#fff0be;color:#352809;border:3px solid #ffdb75;border-radius:16px;box-shadow:0 0 36px #ffd36b33;text-align:center}.save-beacon .eyebrow{color:#695117;font-weight:800}.save-beacon h3{font-size:clamp(23px,4vw,32px);line-height:1.2;margin:12px 0;letter-spacing:1px}.save-beacon p{margin:10px 0}.save-beacon #finish-save-status{font-weight:700;font-size:14px}.save-beacon.saved{background:#d5f7e8;border-color:#91e5bf;color:#153f2e;box-shadow:none}.save-beacon.saved .eyebrow{color:#246548}
 @keyframes timer-pulse{50%{box-shadow:0 0 0 5px #ff737b33}}
-@media(max-width:500px){.play-toolbar .eyebrow{max-width:130px;line-height:1.6}.stats{gap:8px;font-size:12px}.countdown{font-size:23px;margin-left:auto}.hallway{padding:10px 14px 14px}.bubble{max-width:280px;padding:12px 16px;font-size:19px}.portrait{height:490px;margin:0 -14px}#agent{width:700px;height:490px}.doors{margin-top:28px;gap:16px}.save-beacon{padding:22px 14px}}
+@media(max-width:500px){.play-toolbar .eyebrow{max-width:130px;line-height:1.6}.stats{gap:8px;font-size:12px}.countdown{font-size:23px;margin-left:auto}.hallway{padding:10px 14px 14px}.bubble{max-width:280px;padding:12px 16px;font-size:19px}.portrait{margin:0 -14px}.doors{margin-top:28px;gap:16px}.save-beacon{padding:22px 14px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 
 #save-countdown{font-size:25px;font-weight:800;font-variant-numeric:tabular-nums}#save-fallback{border-top:1px solid #b69043;margin-top:20px;padding-top:12px}#save-fallback a{color:#62450b;overflow-wrap:anywhere}#save-fallback .backup-note{font-size:13px}#finish-download{background:#352809;color:#fff0be}
+
+/* Keep the guide, timer and choices together in a laptop viewport. */
+.hallway{--portrait-height:clamp(230px,calc(100dvh - 455px),390px)}
+body.playing main{padding-top:10px}body.playing header{margin-bottom:8px}body.playing header .eyebrow{display:none}body.playing header h1{font-size:26px;margin:0}
+body.playing .stats{margin:10px 0}.hallway .doors{margin-top:18px}.hallway #feedback{margin-top:8px}
+@media(max-width:500px){.hallway{--portrait-height:clamp(250px,calc(100dvh - 430px),340px)}}
