@@ -90,7 +90,7 @@ function updatePursuit(now){
   if(remaining<=mazePathLength/2){
     pursuitAt=now;
     $('maze-instruction').textContent="It's closing in. Keep moving toward the blue exit!";
-    record('pursuit_accelerated',{details:JSON.stringify({remaining_steps:remaining,maze_path_steps:mazePathLength,ramp_ms:cfg.enemyRampMs,target_delay_ms:cfg.enemySprintDelayMs})});
+    record('heartbeat',{details:JSON.stringify({action:'pursuit_accelerated',remaining_steps:remaining,maze_path_steps:mazePathLength,ramp_ms:cfg.enemyRampMs,target_delay_ms:cfg.enemySprintDelayMs})});
   }
 }
 function enemyStepDelay(now){
@@ -117,7 +117,7 @@ document.querySelectorAll('[data-choice]').forEach(b=>b.onclick=e=>choose(b.data
 document.querySelectorAll('[data-move]').forEach(b=>{b.onpointerdown=e=>{e.preventDefault();held.add(b.dataset.move);b.setPointerCapture(e.pointerId);move(b.dataset.move);};b.onpointerup=b.onpointercancel=()=>held.delete(b.dataset.move);});
 addEventListener('keydown',e=>{const dir={ArrowLeft:'left',ArrowRight:'right',ArrowUp:'up',ArrowDown:'down'}[e.key];if(!dir||!['maze','choice','feedback','rendering'].includes(phase))return;e.preventDefault();if(phase==='maze'){held.add(dir);move(dir);}else if(!e.repeat&&(dir==='left'||dir==='right'))choose(dir,'keyboard');});addEventListener('keyup',e=>held.delete(e.key.replace('Arrow','').toLowerCase()));addEventListener('blur',()=>held.clear());
 document.addEventListener('visibilitychange',()=>{held.clear();if(!run||phase==='ended')return;if(document.hidden){hiddenAt=performance.now();record('tab_hidden');logger.flush();}else{if(hiddenAt!==null)hiddenMs+=performance.now()-hiddenAt;hiddenAt=null;record('tab_visible');}});
-addEventListener('pagehide',()=>{if(run&&phase!=='ended'){record('page_exit',{details:'Last observed exit; not proof of final abandonment.'});} /* outbox was synchronously persisted; next visit retries it */ });
+addEventListener('pagehide',()=>{if(run&&phase!=='ended'){record('page_exit',{details:'Last observed exit; not proof of final abandonment.'});}logger.flush(); /* Persisted outbox retries on the next visit if delivery is interrupted. */ });
 let heartbeat=0;setInterval(()=>{if(!run||phase==='ended'||phase==='welcome')return;const now=performance.now();$('stage').textContent=`Hallway ${round+1}/${cfg.roundTimes.length} · ${phase==='maze'?'Maze':`Choice ${trial}/9`}`;$('score').textContent=`Score ${score}`;$('health').textContent=`Health ${health}`;const seconds=Math.max(0,Math.ceil((deadline-now)/1000));$('timer').textContent=phase==='maze'?'REACH THE EXIT':`${seconds}s LEFT`;$('timer').classList.toggle('urgent',phase!=='maze'&&seconds<=10);$('timer').classList.toggle('maze-hint',phase==='maze');
   if(phase==='maze'){if(held.size)move(held.values().next().value);if(phase==='maze'&&enemyAt!==null&&now-enemyAt>=enemyStepDelay(now)){enemy=GameCore.path(world.grid,enemy,player)[1]||enemy;enemyAt=now;draw();if(enemy.toString()===player.toString())finish('caught');}}
   else if(now>=deadline&&phase!=='ended')finish('timeout');

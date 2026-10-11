@@ -1,102 +1,72 @@
-{\rtf1\ansi\ansicpg1252\cocoartf2870
-\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fnil\fcharset0 Menlo-Regular;}
-{\colortbl;\red255\green255\blue255;\red46\green49\blue51;\red20\green67\blue174;\red246\green247\blue249;
-\red186\green6\blue115;\red162\green0\blue16;\red0\green0\blue0;\red18\green115\blue126;\red97\green3\blue173;
-\red77\green80\blue85;}
-{\*\expandedcolortbl;;\cssrgb\c23529\c25098\c26275;\cssrgb\c9412\c35294\c73725;\cssrgb\c97255\c97647\c98039;
-\cssrgb\c78824\c15294\c52549;\cssrgb\c70196\c7843\c7059;\cssrgb\c0\c0\c0;\cssrgb\c3529\c52157\c56863;\cssrgb\c46275\c15294\c73333;
-\cssrgb\c37255\c38824\c40784;}
-\margl1440\margr1440\vieww11520\viewh8400\viewkind0
-\deftab720
-\pard\pardeftab720\partightenfactor0
-
-\f0\fs26 \cf2 \expnd0\expndtw0\kerning0
-\outl0\strokewidth0 \strokec2 \
-\pard\pardeftab720\partightenfactor0
-\cf3 \cb4 \strokec3 const\cf2 \strokec2  \cf5 \strokec5 EVENT_HEADERS\cf2 \strokec2  = [\cf6 \strokec6 'event_id'\cf2 \strokec2 ,\cf6 \strokec6 'session_id'\cf2 \strokec2 ,\cf6 \strokec6 'participant_id'\cf2 \strokec2 ,\cf6 \strokec6 'study_id'\cf2 \strokec2 ,\cf6 \strokec6 'version'\cf2 \strokec2 ,\cf6 \strokec6 'sequence'\cf2 \strokec2 ,\cf6 \strokec6 'event_type'\cf2 \strokec2 ,\cf6 \strokec6 'client_time'\cf2 \strokec2 ,\cf6 \strokec6 'received_at'\cf2 \strokec2 ,\cf6 \strokec6 'elapsed_ms'\cf2 \strokec2 ,\cf6 \strokec6 'round'\cf2 \strokec2 ,\cf6 \strokec6 'trial'\cf2 \strokec2 ,\cf6 \strokec6 'prompt_id'\cf2 \strokec2 ,\cf6 \strokec6 'prompt_text'\cf2 \strokec2 ,\cf6 \strokec6 'agent_image'\cf2 \strokec2 ,\cf6 \strokec6 'agent_name'\cf2 \strokec2 ,\cf6 \strokec6 'agent_gender'\cf2 \strokec2 ,\cf6 \strokec6 'agent_suggestion'\cf2 \strokec2 ,\cf6 \strokec6 'agent_truthful'\cf2 \strokec2 ,\cf6 \strokec6 'correct_door'\cf2 \strokec2 ,\cf6 \strokec6 'player_choice'\cf2 \strokec2 ,\cf6 \strokec6 'correct'\cf2 \strokec2 ,\cf6 \strokec6 'compliance'\cf2 \strokec2 ,\cf6 \strokec6 'reaction_time_ms'\cf2 \strokec2 ,\cf6 \strokec6 'hidden_during_prompt_ms'\cf2 \strokec2 ,\cf6 \strokec6 'health_before'\cf2 \strokec2 ,\cf6 \strokec6 'health_after'\cf2 \strokec2 ,\cf6 \strokec6 'health'\cf2 \strokec2 ,\cf6 \strokec6 'score'\cf2 \strokec2 ,\cf6 \strokec6 'time_remaining_ms'\cf2 \strokec2 ,\cf6 \strokec6 'input_method'\cf2 \strokec2 ,\cf6 \strokec6 'details'\cf2 \strokec2 ];\cb1 \
-\cf3 \cb4 \strokec3 const\cf2 \strokec2  \cf5 \strokec5 SESSION_HEADERS\cf2 \strokec2  = [\cf6 \strokec6 'session_id'\cf2 \strokec2 ,\cf6 \strokec6 'participant_id'\cf2 \strokec2 ,\cf6 \strokec6 'study_id'\cf2 \strokec2 ,\cf6 \strokec6 'version'\cf2 \strokec2 ,\cf6 \strokec6 'started_at'\cf2 \strokec2 ,\cf6 \strokec6 'last_received_at'\cf2 \strokec2 ,\cf6 \strokec6 'ended_at'\cf2 \strokec2 ,\cf6 \strokec6 'status'\cf2 \strokec2 ,\cf6 \strokec6 'sequence'\cf2 \strokec2 ,\cf6 \strokec6 'seed'\cf2 \strokec2 ,\cf6 \strokec6 'prompt_id'\cf2 \strokec2 ,\cf6 \strokec6 'prompt_template'\cf2 \strokec2 ,\cf6 \strokec6 'gender_sequence'\cf2 \strokec2 ,\cf6 \strokec6 'round'\cf2 \strokec2 ,\cf6 \strokec6 'trial'\cf2 \strokec2 ,\cf6 \strokec6 'decisions'\cf2 \strokec2 ,\cf6 \strokec6 'correct_count'\cf2 \strokec2 ,\cf6 \strokec6 'followed_count'\cf2 \strokec2 ,\cf6 \strokec6 'mean_reaction_ms'\cf2 \strokec2 ,\cf6 \strokec6 'score'\cf2 \strokec2 ,\cf6 \strokec6 'health'\cf2 \strokec2 ,\cf6 \strokec6 'elapsed_ms'\cf2 \strokec2 ,\cf6 \strokec6 'hidden_ms'\cf2 \strokec2 ,\cf6 \strokec6 'config'\cf2 \strokec2 ];\cb1 \
-\cf3 \cb4 \strokec3 function\cf2 \strokec2  \strokec7 setup\strokec2 () \{\cb1 \
-\pard\pardeftab720\partightenfactor0
-\cf2 \cb4   \cf3 \strokec3 const\cf2 \strokec2  \strokec7 ss\strokec2  = \cf5 \strokec5 SpreadsheetApp\cf2 \strokec2 .\strokec7 getActiveSpreadsheet\strokec2 ();\cb1 \
-\cb4   \cf5 \strokec5 PropertiesService\cf2 \strokec2 .\strokec7 getScriptProperties\strokec2 ().\strokec7 setProperty\strokec2 (\cf6 \strokec6 'SHEET_ID'\cf2 \strokec2 , \strokec7 ss\strokec2 .\strokec7 getId\strokec2 ());\cb1 \
-\cb4   \strokec7 ensureSheet_\strokec2 (\strokec7 ss\strokec2 , \cf6 \strokec6 'Events'\cf2 \strokec2 , \cf5 \strokec5 EVENT_HEADERS\cf2 \strokec2 );\cb1 \
-\cb4   \strokec7 ensureSheet_\strokec2 (\strokec7 ss\strokec2 , \cf6 \strokec6 'Sessions'\cf2 \strokec2 , \cf5 \strokec5 SESSION_HEADERS\cf2 \strokec2 );\cb1 \
-\cb4   \strokec7 ensureSheet_\strokec2 (\strokec7 ss\strokec2 , \cf6 \strokec6 'Receipts'\cf2 \strokec2 , [\cf6 \strokec6 'batch_id'\cf2 \strokec2 ,\cf6 \strokec6 'received_at'\cf2 \strokec2 ]);\cb1 \
-\cb4 \}\cb1 \
-\pard\pardeftab720\partightenfactor0
-\cf3 \cb4 \strokec3 function\cf2 \strokec2  \strokec7 ensureSheet_\strokec2 (\strokec7 ss\strokec2 , \strokec7 name\strokec2 , \strokec7 headers\strokec2 ) \{\cb1 \
-\pard\pardeftab720\partightenfactor0
-\cf2 \cb4   \cf3 \strokec3 const\cf2 \strokec2  \strokec7 sheet\strokec2  = \strokec7 ss\strokec2 .\strokec7 getSheetByName\strokec2 (\strokec7 name\strokec2 ) || \strokec7 ss\strokec2 .\strokec7 insertSheet\strokec2 (\strokec7 name\strokec2 );\cb1 \
-\cb4   \cf3 \strokec3 if\cf2 \strokec2  (\strokec7 sheet\strokec2 .\strokec7 getLastRow\strokec2 () === \cf8 \strokec8 0\cf2 \strokec2 ) \{\strokec7 sheet\strokec2 .\strokec7 appendRow\strokec2 (\strokec7 headers\strokec2 );\strokec7 sheet\strokec2 .\strokec7 setFrozenRows\strokec2 (\cf8 \strokec8 1\cf2 \strokec2 );\strokec7 sheet\strokec2 .\strokec7 getRange\strokec2 (\cf8 \strokec8 1\cf2 \strokec2 ,\cf8 \strokec8 1\cf2 \strokec2 ,\cf8 \strokec8 1\cf2 \strokec2 ,\strokec7 headers\strokec2 .\strokec7 length\strokec2 ).\strokec7 setFontWeight\strokec2 (\cf6 \strokec6 'bold'\cf2 \strokec2 );\}\cb1 \
-\cb4   \cf3 \strokec3 const\cf2 \strokec2  \strokec7 actual\strokec2 =\strokec7 sheet\strokec2 .\strokec7 getRange\strokec2 (\cf8 \strokec8 1\cf2 \strokec2 ,\cf8 \strokec8 1\cf2 \strokec2 ,\cf8 \strokec8 1\cf2 \strokec2 ,\strokec7 headers\strokec2 .\strokec7 length\strokec2 ).\strokec7 getValues\strokec2 ()[\cf8 \strokec8 0\cf2 \strokec2 ];\cb1 \
-\cb4   \cf3 \strokec3 if\cf2 \strokec2  (\strokec7 actual\strokec2 .\strokec7 join\strokec2 (\cf6 \strokec6 '|'\cf2 \strokec2 )!==\strokec7 headers\strokec2 .\strokec7 join\strokec2 (\cf6 \strokec6 '|'\cf2 \strokec2 )) \cf3 \strokec3 throw\cf2 \strokec2  \cf5 \strokec5 Error\cf2 \strokec2 (\cf6 \strokec6 'Unexpected columns in '\cf2 \strokec2 +\strokec7 name\strokec2 +\cf6 \strokec6 '. Restore the original header row.'\cf2 \strokec2 );\cb1 \
-\cb4   \cf3 \strokec3 return\cf2 \strokec2  \strokec7 sheet\strokec2 ;\cb1 \
-\cb4 \}\cb1 \
-\pard\pardeftab720\partightenfactor0
-\cf3 \cb4 \strokec3 function\cf2 \strokec2  \strokec7 book_\strokec2 () \{\cb1 \
-\pard\pardeftab720\partightenfactor0
-\cf2 \cb4   \cf3 \strokec3 const\cf2 \strokec2  \strokec7 id\strokec2 =\cf5 \strokec5 PropertiesService\cf2 \strokec2 .\strokec7 getScriptProperties\strokec2 ().\strokec7 getProperty\strokec2 (\cf6 \strokec6 'SHEET_ID'\cf2 \strokec2 );\cb1 \
-\cb4   \cf3 \strokec3 if\cf2 \strokec2 (!\strokec7 id\strokec2 )\cf3 \strokec3 throw\cf2 \strokec2  \cf5 \strokec5 Error\cf2 \strokec2 (\cf6 \strokec6 'Run setup() first.'\cf2 \strokec2 );\cb1 \
-\cb4   \cf3 \strokec3 return\cf2 \strokec2  \cf5 \strokec5 SpreadsheetApp\cf2 \strokec2 .\strokec7 openById\strokec2 (\strokec7 id\strokec2 );\cb1 \
-\cb4 \}\cb1 \
-\pard\pardeftab720\partightenfactor0
-\cf3 \cb4 \strokec3 function\cf2 \strokec2  \strokec7 find_\strokec2 (\strokec7 sheet\strokec2 , \strokec7 id\strokec2 ) \{\cb1 \
-\pard\pardeftab720\partightenfactor0
-\cf2 \cb4   \cf3 \strokec3 if\cf2 \strokec2 (\strokec7 sheet\strokec2 .\strokec7 getLastRow\strokec2 ()<\cf8 \strokec8 2\cf2 \strokec2 )\cf3 \strokec3 return\cf2 \strokec2  \cf3 \strokec3 null\cf2 \strokec2 ;\cb1 \
-\cb4   \cf3 \strokec3 return\cf2 \strokec2  \strokec7 sheet\strokec2 .\strokec7 getRange\strokec2 (\cf8 \strokec8 2\cf2 \strokec2 ,\cf8 \strokec8 1\cf2 \strokec2 ,\strokec7 sheet\strokec2 .\strokec7 getLastRow\strokec2 ()-\cf8 \strokec8 1\cf2 \strokec2 ,\cf8 \strokec8 1\cf2 \strokec2 ).\strokec7 createTextFinder\strokec2 (\strokec7 id\strokec2 ).\strokec7 matchEntireCell\strokec2 (\cf3 \strokec3 true\cf2 \strokec2 ).\strokec7 useRegularExpression\strokec2 (\cf3 \strokec3 false\cf2 \strokec2 ).\strokec7 findNext\strokec2 ();\cb1 \
-\cb4 \}\cb1 \
-\pard\pardeftab720\partightenfactor0
-\cf3 \cb4 \strokec3 function\cf2 \strokec2  \strokec7 uuid_\strokec2 (\strokec7 s\strokec2 )\{\cf3 \strokec3 return\cf2 \strokec2  \cf3 \strokec3 typeof\cf2 \strokec2  \strokec7 s\strokec2 ===\cf6 \strokec6 'string'\cf2 \strokec2 &&/^[\strokec7 a\strokec2 -\strokec7 f0\strokec2 -\cf8 \strokec8 9\cf2 \strokec2 ]\{\cf8 \strokec8 8\cf2 \strokec2 \}-[\strokec7 a\strokec2 -\strokec7 f0\strokec2 -\cf8 \strokec8 9\cf2 \strokec2 ]\{\cf8 \strokec8 4\cf2 \strokec2 \}-[\strokec7 a\strokec2 -\strokec7 f0\strokec2 -\cf8 \strokec8 9\cf2 \strokec2 ]\{\cf8 \strokec8 4\cf2 \strokec2 \}-[\strokec7 a\strokec2 -\strokec7 f0\strokec2 -\cf8 \strokec8 9\cf2 \strokec2 ]\{\cf8 \strokec8 4\cf2 \strokec2 \}-[\strokec7 a\strokec2 -\strokec7 f0\strokec2 -\cf8 \strokec8 9\cf2 \strokec2 ]\{\cf8 \strokec8 12\cf2 \strokec2 \}\strokec7 $\strokec2 /\strokec7 i\strokec2 .\strokec7 test\strokec2 (\strokec7 s\strokec2 );\}\cb1 \
-\cf3 \cb4 \strokec3 function\cf2 \strokec2  \strokec7 safe_\strokec2 (\strokec7 v\strokec2 )\{\cb1 \
-\pard\pardeftab720\partightenfactor0
-\cf2 \cb4   \cf3 \strokec3 if\cf2 \strokec2 (\strokec7 v\strokec2 ===\cf3 \strokec3 undefined\cf2 \strokec2 ||\strokec7 v\strokec2 ===\cf3 \strokec3 null\cf2 \strokec2 )\cf3 \strokec3 return\cf2 \strokec2  \cf6 \strokec6 ''\cf2 \strokec2 ;\cb1 \
-\cb4   \cf3 \strokec3 if\cf2 \strokec2 (\cf3 \strokec3 typeof\cf2 \strokec2  \strokec7 v\strokec2 ===\cf6 \strokec6 'boolean'\cf2 \strokec2 ||\cf3 \strokec3 typeof\cf2 \strokec2  \strokec7 v\strokec2 ===\cf6 \strokec6 'number'\cf2 \strokec2 )\cf3 \strokec3 return\cf2 \strokec2  \strokec7 v\strokec2 ;\cb1 \
-\cb4   \cf3 \strokec3 const\cf2 \strokec2  \strokec7 text\strokec2 =\cf5 \strokec5 String\cf2 \strokec2 (\strokec7 v\strokec2 ).\strokec7 slice\strokec2 (\cf8 \strokec8 0\cf2 \strokec2 ,\cf8 \strokec8 12000\cf2 \strokec2 );\cb1 \
-\cb4   \cf3 \strokec3 return\cf2 \strokec2  \cf9 \strokec9 /^[\\s]*[=+@-]/\cf2 \strokec2 .\strokec7 test\strokec2 (\strokec7 text\strokec2 )?\cf6 \strokec6 "'"\cf2 \strokec2 +\strokec7 text\strokec2 :\strokec7 text\strokec2 ; \cf10 \strokec10 // Prevent spreadsheet formula injection.\cf2 \cb1 \strokec2 \
-\cb4 \}\cb1 \
-\pard\pardeftab720\partightenfactor0
-\cf3 \cb4 \strokec3 function\cf2 \strokec2  \strokec7 doPost\strokec2 (\strokec7 e\strokec2 ) \{\cb1 \
-\pard\pardeftab720\partightenfactor0
-\cf2 \cb4   \cf3 \strokec3 const\cf2 \strokec2  \strokec7 lock\strokec2 =\cf5 \strokec5 LockService\cf2 \strokec2 .\strokec7 getScriptLock\strokec2 ();\cb1 \
-\cb4   \cf3 \strokec3 try\cf2 \strokec2  \{\cb1 \
-\cb4     \cf3 \strokec3 if\cf2 \strokec2 (!\strokec7 e\strokec2 .\strokec7 postData\strokec2 ||\strokec7 e\strokec2 .\strokec7 postData\strokec2 .\strokec7 contents\strokec2 .\strokec7 length\strokec2 >\cf8 \strokec8 250000\cf2 \strokec2 )\cf3 \strokec3 throw\cf2 \strokec2  \cf5 \strokec5 Error\cf2 \strokec2 (\cf6 \strokec6 'Invalid body'\cf2 \strokec2 );\cb1 \
-\cb4     \cf3 \strokec3 const\cf2 \strokec2  \strokec7 b\strokec2 =\cf5 \strokec5 JSON\cf2 \strokec2 .\strokec7 parse\strokec2 (\strokec7 e\strokec2 .\strokec7 postData\strokec2 .\strokec7 contents\strokec2 ),\strokec7 s\strokec2 =\strokec7 b\strokec2 .\strokec7 session\strokec2 ;\cb1 \
-\cb4     \cf3 \strokec3 if\cf2 \strokec2 (!\strokec7 uuid_\strokec2 (\strokec7 b\strokec2 .\strokec7 batch_id\strokec2 )||!\strokec7 s\strokec2 ||!\strokec7 uuid_\strokec2 (\strokec7 s\strokec2 .\strokec7 session_id\strokec2 )||!\cf5 \strokec5 Array\cf2 \strokec2 .\strokec7 isArray\strokec2 (\strokec7 b\strokec2 .\strokec7 events\strokec2 )||\strokec7 b\strokec2 .\strokec7 events\strokec2 .\strokec7 length\strokec2 <\cf8 \strokec8 1\cf2 \strokec2 ||\strokec7 b\strokec2 .\strokec7 events\strokec2 .\strokec7 length\strokec2 >\cf8 \strokec8 100\cf2 \strokec2 )\cf3 \strokec3 throw\cf2 \strokec2  \cf5 \strokec5 Error\cf2 \strokec2 (\cf6 \strokec6 'Invalid batch'\cf2 \strokec2 );\cb1 \
-\cb4     \cf3 \strokec3 if\cf2 \strokec2 (!\cf5 \strokec5 Number\cf2 \strokec2 .\strokec7 isInteger\strokec2 (\strokec7 s\strokec2 .\strokec7 sequence\strokec2 )||\strokec7 s\strokec2 .\strokec7 sequence\strokec2 <\cf8 \strokec8 1\cf2 \strokec2 )\cf3 \strokec3 throw\cf2 \strokec2  \cf5 \strokec5 Error\cf2 \strokec2 (\cf6 \strokec6 'Invalid sequence'\cf2 \strokec2 );\cb1 \
-\cb4     \cf3 \strokec3 for\cf2 \strokec2 (\cf3 \strokec3 const\cf2 \strokec2  \strokec7 event\strokec2  \cf3 \strokec3 of\cf2 \strokec2  \strokec7 b\strokec2 .\strokec7 events\strokec2 )\{\cb1 \
-\cb4       \cf3 \strokec3 if\cf2 \strokec2 (!\strokec7 uuid_\strokec2 (\strokec7 event\strokec2 .\strokec7 event_id\strokec2 )||\strokec7 event\strokec2 .\strokec7 session_id\strokec2 !==\strokec7 s\strokec2 .\strokec7 session_id\strokec2 ||!\cf5 \strokec5 Number\cf2 \strokec2 .\strokec7 isInteger\strokec2 (\strokec7 event\strokec2 .\strokec7 sequence\strokec2 )||\strokec7 event\strokec2 .\strokec7 sequence\strokec2 <\cf8 \strokec8 1\cf2 \strokec2 ||\strokec7 event\strokec2 .\strokec7 sequence\strokec2 >\strokec7 s\strokec2 .\strokec7 sequence\strokec2 )\cf3 \strokec3 throw\cf2 \strokec2  \cf5 \strokec5 Error\cf2 \strokec2 (\cf6 \strokec6 'Invalid event'\cf2 \strokec2 );\cb1 \
-\cb4       \cf3 \strokec3 if\cf2 \strokec2 (![\cf6 \strokec6 'session_start'\cf2 \strokec2 ,\cf6 \strokec6 'maze_start'\cf2 \strokec2 ,\cf6 \strokec6 'maze_complete'\cf2 \strokec2 ,\cf6 \strokec6 'prompt_shown'\cf2 \strokec2 ,\cf6 \strokec6 'decision'\cf2 \strokec2 ,\cf6 \strokec6 'hallway_complete'\cf2 \strokec2 ,\cf6 \strokec6 'session_end'\cf2 \strokec2 ,\cf6 \strokec6 'tab_hidden'\cf2 \strokec2 ,\cf6 \strokec6 'tab_visible'\cf2 \strokec2 ,\cf6 \strokec6 'page_exit'\cf2 \strokec2 ,\cf6 \strokec6 'heartbeat'\cf2 \strokec2 ].\strokec7 includes\strokec2 (\strokec7 event\strokec2 .\strokec7 event_type\strokec2 ))\cf3 \strokec3 throw\cf2 \strokec2  \cf5 \strokec5 Error\cf2 \strokec2 (\cf6 \strokec6 'Invalid event type'\cf2 \strokec2 );\cb1 \
-\cb4       \cf3 \strokec3 if\cf2 \strokec2 (\strokec7 event\strokec2 .\strokec7 event_type\strokec2 ===\cf6 \strokec6 'decision'\cf2 \strokec2 &&(![\cf6 \strokec6 'left'\cf2 \strokec2 ,\cf6 \strokec6 'right'\cf2 \strokec2 ].\strokec7 includes\strokec2 (\strokec7 event\strokec2 .\strokec7 player_choice\strokec2 )||!\cf5 \strokec5 Number\cf2 \strokec2 .\strokec7 isFinite\strokec2 (\strokec7 event\strokec2 .\strokec7 reaction_time_ms\strokec2 )||\strokec7 event\strokec2 .\strokec7 reaction_time_ms\strokec2 <\cf8 \strokec8 0\cf2 \strokec2 ))\cf3 \strokec3 throw\cf2 \strokec2  \cf5 \strokec5 Error\cf2 \strokec2 (\cf6 \strokec6 'Invalid decision'\cf2 \strokec2 );\cb1 \
-\cb4     \}\cb1 \
-\cb4     \strokec7 lock\strokec2 .\strokec7 waitLock\strokec2 (\cf8 \strokec8 25000\cf2 \strokec2 );\cb1 \
-\cb4     \cf3 \strokec3 const\cf2 \strokec2  \strokec7 ss\strokec2 =\strokec7 book_\strokec2 (),\strokec7 receipts\strokec2 =\strokec7 ensureSheet_\strokec2 (\strokec7 ss\strokec2 ,\cf6 \strokec6 'Receipts'\cf2 \strokec2 ,[\cf6 \strokec6 'batch_id'\cf2 \strokec2 ,\cf6 \strokec6 'received_at'\cf2 \strokec2 ]);\cb1 \
-\cb4     \cf3 \strokec3 if\cf2 \strokec2 (\strokec7 find_\strokec2 (\strokec7 receipts\strokec2 ,\strokec7 b\strokec2 .\strokec7 batch_id\strokec2 ))\cf3 \strokec3 return\cf2 \strokec2  \strokec7 json_\strokec2 (\{\strokec7 ok\strokec2 :\cf3 \strokec3 true\cf2 \strokec2 \});\cb1 \
-\cb4     \cf3 \strokec3 const\cf2 \strokec2  \strokec7 events\strokec2 =\strokec7 ensureSheet_\strokec2 (\strokec7 ss\strokec2 ,\cf6 \strokec6 'Events'\cf2 \strokec2 ,\cf5 \strokec5 EVENT_HEADERS\cf2 \strokec2 ),\strokec7 sessions\strokec2 =\strokec7 ensureSheet_\strokec2 (\strokec7 ss\strokec2 ,\cf6 \strokec6 'Sessions'\cf2 \strokec2 ,\cf5 \strokec5 SESSION_HEADERS\cf2 \strokec2 ),\strokec7 now\strokec2 =\cf3 \strokec3 new\cf2 \strokec2  \cf5 \strokec5 Date\cf2 \strokec2 ().\strokec7 toISOString\strokec2 ();\cb1 \
-\cb4     \cf10 \strokec10 // Event-level deduplication also repairs a partial write before receipt creation.\cf2 \cb1 \strokec2 \
-\cb4     \cf3 \strokec3 const\cf2 \strokec2  \strokec7 seen\strokec2 =\cf3 \strokec3 new\cf2 \strokec2  \cf5 \strokec5 Set\cf2 \strokec2 (),\strokec7 rows\strokec2 =[];\cb1 \
-\cb4     \strokec7 b\strokec2 .\strokec7 events\strokec2 .\strokec7 forEach\strokec2 (\strokec7 event\strokec2 =>\{\cf3 \strokec3 if\cf2 \strokec2 (!\strokec7 seen\strokec2 .\strokec7 has\strokec2 (\strokec7 event\strokec2 .\strokec7 event_id\strokec2 )&&!\strokec7 find_\strokec2 (\strokec7 events\strokec2 ,\strokec7 event\strokec2 .\strokec7 event_id\strokec2 ))\{\strokec7 seen\strokec2 .\strokec7 add\strokec2 (\strokec7 event\strokec2 .\strokec7 event_id\strokec2 );\strokec7 rows\strokec2 .\strokec7 push\strokec2 (\cf5 \strokec5 EVENT_HEADERS\cf2 \strokec2 .\strokec7 map\strokec2 (\strokec7 h\strokec2 =>\strokec7 safe_\strokec2 (\strokec7 h\strokec2 ===\cf6 \strokec6 'received_at'\cf2 \strokec2 ?\strokec7 now\strokec2 :\strokec7 event\strokec2 [\strokec7 h\strokec2 ])));\}\});\cb1 \
-\cb4     \cf3 \strokec3 if\cf2 \strokec2 (\strokec7 rows\strokec2 .\strokec7 length\strokec2 )\strokec7 events\strokec2 .\strokec7 getRange\strokec2 (\strokec7 events\strokec2 .\strokec7 getLastRow\strokec2 ()+\cf8 \strokec8 1\cf2 \strokec2 ,\cf8 \strokec8 1\cf2 \strokec2 ,\strokec7 rows\strokec2 .\strokec7 length\strokec2 ,\cf5 \strokec5 EVENT_HEADERS\cf2 \strokec2 .\strokec7 length\strokec2 ).\strokec7 setValues\strokec2 (\strokec7 rows\strokec2 );\cb1 \
-\cb4     \cf3 \strokec3 const\cf2 \strokec2  \strokec7 existing\strokec2 =\strokec7 find_\strokec2 (\strokec7 sessions\strokec2 ,\strokec7 s\strokec2 .\strokec7 session_id\strokec2 ),\strokec7 row\strokec2 =\strokec7 existing\strokec2 ?\strokec7 existing\strokec2 .\strokec7 getRow\strokec2 ():\strokec7 sessions\strokec2 .\strokec7 getLastRow\strokec2 ()+\cf8 \strokec8 1\cf2 \strokec2 ;\cb1 \
-\cb4     \cf3 \strokec3 const\cf2 \strokec2  \strokec7 oldSequence\strokec2 =\strokec7 existing\strokec2 ?\cf5 \strokec5 Number\cf2 \strokec2 (\strokec7 sessions\strokec2 .\strokec7 getRange\strokec2 (\strokec7 row\strokec2 ,\cf5 \strokec5 SESSION_HEADERS\cf2 \strokec2 .\strokec7 indexOf\strokec2 (\cf6 \strokec6 'sequence'\cf2 \strokec2 )+\cf8 \strokec8 1\cf2 \strokec2 ).\strokec7 getValue\strokec2 ()):\cf8 \strokec8 0\cf2 \strokec2 ;\cb1 \
-\cb4     \cf3 \strokec3 if\cf2 \strokec2 (\strokec7 s\strokec2 .\strokec7 sequence\strokec2 >=\strokec7 oldSequence\strokec2 )\{\strokec7 s\strokec2 .\strokec7 last_received_at\strokec2 =\strokec7 now\strokec2 ;\strokec7 s\strokec2 .\strokec7 mean_reaction_ms\strokec2 =\strokec7 s\strokec2 .\strokec7 decisions\strokec2 ?\cf5 \strokec5 Math\cf2 \strokec2 .\strokec7 round\strokec2 (\strokec7 s\strokec2 .\strokec7 reaction_total_ms\strokec2 /\strokec7 s\strokec2 .\strokec7 decisions\strokec2 ):\cf6 \strokec6 ''\cf2 \strokec2 ;\strokec7 sessions\strokec2 .\strokec7 getRange\strokec2 (\strokec7 row\strokec2 ,\cf8 \strokec8 1\cf2 \strokec2 ,\cf8 \strokec8 1\cf2 \strokec2 ,\cf5 \strokec5 SESSION_HEADERS\cf2 \strokec2 .\strokec7 length\strokec2 ).\strokec7 setValues\strokec2 ([\cf5 \strokec5 SESSION_HEADERS\cf2 \strokec2 .\strokec7 map\strokec2 (\strokec7 h\strokec2 =>\strokec7 safe_\strokec2 (\strokec7 s\strokec2 [\strokec7 h\strokec2 ]))]);\}\cb1 \
-\cb4     \cf5 \strokec5 SpreadsheetApp\cf2 \strokec2 .\strokec7 flush\strokec2 ();\cb1 \
-\cb4     \strokec7 receipts\strokec2 .\strokec7 appendRow\strokec2 ([\strokec7 b\strokec2 .\strokec7 batch_id\strokec2 ,\strokec7 now\strokec2 ]);\cb1 \
-\cb4     \cf5 \strokec5 SpreadsheetApp\cf2 \strokec2 .\strokec7 flush\strokec2 ();\cb1 \
-\cb4     \cf3 \strokec3 return\cf2 \strokec2  \strokec7 json_\strokec2 (\{\strokec7 ok\strokec2 :\cf3 \strokec3 true\cf2 \strokec2 \});\cb1 \
-\cb4   \}\cf3 \strokec3 catch\cf2 \strokec2 (\strokec7 error\strokec2 )\{\strokec7 console\strokec2 .\strokec7 error\strokec2 (\cf5 \strokec5 String\cf2 \strokec2 (\strokec7 error\strokec2 ));\cf3 \strokec3 return\cf2 \strokec2  \strokec7 json_\strokec2 (\{\strokec7 ok\strokec2 :\cf3 \strokec3 false\cf2 \strokec2 \});\}\cb1 \
-\cb4   \cf3 \strokec3 finally\cf2 \strokec2  \{\cf3 \strokec3 if\cf2 \strokec2 (\strokec7 lock\strokec2 .\strokec7 hasLock\strokec2 ())\strokec7 lock\strokec2 .\strokec7 releaseLock\strokec2 ();\}\cb1 \
-\cb4 \}\cb1 \
-\pard\pardeftab720\partightenfactor0
-\cf3 \cb4 \strokec3 function\cf2 \strokec2  \strokec7 json_\strokec2 (\strokec7 data\strokec2 )\{\cf3 \strokec3 return\cf2 \strokec2  \cf5 \strokec5 ContentService\cf2 \strokec2 .\strokec7 createTextOutput\strokec2 (\cf5 \strokec5 JSON\cf2 \strokec2 .\strokec7 stringify\strokec2 (\strokec7 data\strokec2 )).\strokec7 setMimeType\strokec2 (\cf5 \strokec5 ContentService\cf2 \strokec2 .\cf5 \strokec5 MimeType\cf2 \strokec2 .\cf5 \strokec5 JSON\cf2 \strokec2 );\}\cb1 \
-\cf3 \cb4 \strokec3 function\cf2 \strokec2  \strokec7 doGet\strokec2 (\strokec7 e\strokec2 ) \{\cb1 \
-\pard\pardeftab720\partightenfactor0
-\cf2 \cb4   \cf3 \strokec3 const\cf2 \strokec2  \strokec7 p\strokec2 =\strokec7 e\strokec2 &&\strokec7 e\strokec2 .\strokec7 parameter\strokec2 ||\{\};\cb1 \
-\cb4   \cf3 \strokec3 if\cf2 \strokec2 (!\strokec7 p\strokec2 .\strokec7 callback\strokec2 )\cf3 \strokec3 return\cf2 \strokec2  \strokec7 json_\strokec2 (\{\strokec7 service\strokec2 :\cf6 \strokec6 'Door study collector'\cf2 \strokec2 ,\strokec7 ready\strokec2 :!!\cf5 \strokec5 PropertiesService\cf2 \strokec2 .\strokec7 getScriptProperties\strokec2 ().\strokec7 getProperty\strokec2 (\cf6 \strokec6 'SHEET_ID'\cf2 \strokec2 )\});\cb1 \
-\cb4   \cf10 \strokec10 // JSONP returns only an opaque receipt, never participant or game records.\cf2 \cb1 \strokec2 \
-\cb4   \cf3 \strokec3 if\cf2 \strokec2 (!\cf9 \strokec9 /^receipt_[a-f0-9]\{32\}$/\cf2 \strokec2 .\strokec7 test\strokec2 (\strokec7 p\strokec2 .\strokec7 callback\strokec2 )||!\strokec7 uuid_\strokec2 (\strokec7 p\strokec2 .\strokec7 batch_id\strokec2 ))\cf3 \strokec3 return\cf2 \strokec2  \strokec7 json_\strokec2 (\{\strokec7 ok\strokec2 :\cf3 \strokec3 false\cf2 \strokec2 \});\cb1 \
-\cb4   \cf3 \strokec3 let\cf2 \strokec2  \strokec7 saved\strokec2 =\cf3 \strokec3 false\cf2 \strokec2 ;\cb1 \
-\cb4   \cf3 \strokec3 try\cf2 \strokec2 \{\strokec7 saved\strokec2 =!!\strokec7 find_\strokec2 (\strokec7 book_\strokec2 ().\strokec7 getSheetByName\strokec2 (\cf6 \strokec6 'Receipts'\cf2 \strokec2 ),\strokec7 p\strokec2 .\strokec7 batch_id\strokec2 );\}\cf3 \strokec3 catch\cf2 \strokec2 (\strokec7 error\strokec2 )\{\strokec7 console\strokec2 .\strokec7 error\strokec2 (\cf5 \strokec5 String\cf2 \strokec2 (\strokec7 error\strokec2 ));\}\cb1 \
-\cb4   \cf3 \strokec3 return\cf2 \strokec2  \cf5 \strokec5 ContentService\cf2 \strokec2 .\strokec7 createTextOutput\strokec2 (\strokec7 p\strokec2 .\strokec7 callback\strokec2 +\cf6 \strokec6 '('\cf2 \strokec2 +\cf5 \strokec5 JSON\cf2 \strokec2 .\strokec7 stringify\strokec2 (\{\strokec7 batch_id\strokec2 :\strokec7 p\strokec2 .\strokec7 batch_id\strokec2 ,\strokec7 saved\strokec2 \})+\cf6 \strokec6 ');'\cf2 \strokec2 ).\strokec7 setMimeType\strokec2 (\cf5 \strokec5 ContentService\cf2 \strokec2 .\cf5 \strokec5 MimeType\cf2 \strokec2 .\cf5 \strokec5 JAVASCRIPT\cf2 \strokec2 );\cb1 \
-\cb4 \}\cb1 \
-\
+const EVENT_HEADERS = ['event_id','session_id','participant_id','study_id','version','sequence','event_type','client_time','received_at','elapsed_ms','round','trial','prompt_id','prompt_text','agent_image','agent_name','agent_gender','agent_suggestion','agent_truthful','correct_door','player_choice','correct','compliance','reaction_time_ms','hidden_during_prompt_ms','health_before','health_after','health','score','time_remaining_ms','input_method','details'];
+const SESSION_HEADERS = ['session_id','participant_id','study_id','version','started_at','last_received_at','ended_at','status','sequence','seed','prompt_id','prompt_template','gender_sequence','round','trial','decisions','correct_count','followed_count','mean_reaction_ms','score','health','elapsed_ms','hidden_ms','config'];
+function setup() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  PropertiesService.getScriptProperties().setProperty('SHEET_ID', ss.getId());
+  ensureSheet_(ss, 'Events', EVENT_HEADERS);
+  ensureSheet_(ss, 'Sessions', SESSION_HEADERS);
+  ensureSheet_(ss, 'Receipts', ['batch_id','received_at']);
+}
+function ensureSheet_(ss, name, headers) {
+  const sheet = ss.getSheetByName(name) || ss.insertSheet(name);
+  if (sheet.getLastRow() === 0) {sheet.appendRow(headers);sheet.setFrozenRows(1);sheet.getRange(1,1,1,headers.length).setFontWeight('bold');}
+  const actual=sheet.getRange(1,1,1,headers.length).getValues()[0];
+  if (actual.join('|')!==headers.join('|')) throw Error('Unexpected columns in '+name+'. Restore the original header row.');
+  return sheet;
+}
+function book_() {
+  const id=PropertiesService.getScriptProperties().getProperty('SHEET_ID');
+  if(!id)throw Error('Run setup() first.');
+  return SpreadsheetApp.openById(id);
+}
+function find_(sheet, id) {
+  if(sheet.getLastRow()<2)return null;
+  return sheet.getRange(2,1,sheet.getLastRow()-1,1).createTextFinder(id).matchEntireCell(true).useRegularExpression(false).findNext();
+}
+function uuid_(s){return typeof s==='string'&&/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(s);}
+function safe_(v){
+  if(v===undefined||v===null)return '';
+  if(typeof v==='boolean'||typeof v==='number')return v;
+  const text=String(v).slice(0,12000);
+  return /^[\s]*[=+@-]/.test(text)?"'"+text:text; // Prevent spreadsheet formula injection.
+}
+function doPost(e) {
+  const lock=LockService.getScriptLock();
+  try {
+    if(!e.postData||e.postData.contents.length>250000)throw Error('Invalid body');
+    const b=JSON.parse(e.postData.contents),s=b.session;
+    if(!uuid_(b.batch_id)||!s||!uuid_(s.session_id)||!Array.isArray(b.events)||b.events.length<1||b.events.length>100)throw Error('Invalid batch');
+    if(!Number.isInteger(s.sequence)||s.sequence<1)throw Error('Invalid sequence');
+    for(const event of b.events){
+      if(!uuid_(event.event_id)||event.session_id!==s.session_id||!Number.isInteger(event.sequence)||event.sequence<1||event.sequence>s.sequence)throw Error('Invalid event');
+      if(!['session_start','maze_start','maze_complete','prompt_shown','decision','hallway_complete','session_end','tab_hidden','tab_visible','page_exit','heartbeat'].includes(event.event_type))throw Error('Invalid event type');
+      if(event.event_type==='decision'&&(!['left','right'].includes(event.player_choice)||!Number.isFinite(event.reaction_time_ms)||event.reaction_time_ms<0))throw Error('Invalid decision');
+    }
+    lock.waitLock(25000);
+    const ss=book_(),receipts=ensureSheet_(ss,'Receipts',['batch_id','received_at']);
+    if(find_(receipts,b.batch_id))return json_({ok:true});
+    const events=ensureSheet_(ss,'Events',EVENT_HEADERS),sessions=ensureSheet_(ss,'Sessions',SESSION_HEADERS),now=new Date().toISOString();
+    // Event-level deduplication also repairs a partial write before receipt creation.
+    const seen=new Set(),rows=[];
+    b.events.forEach(event=>{if(!seen.has(event.event_id)&&!find_(events,event.event_id)){seen.add(event.event_id);rows.push(EVENT_HEADERS.map(h=>safe_(h==='received_at'?now:event[h])));}});
+    if(rows.length)events.getRange(events.getLastRow()+1,1,rows.length,EVENT_HEADERS.length).setValues(rows);
+    const existing=find_(sessions,s.session_id),row=existing?existing.getRow():sessions.getLastRow()+1;
+    const oldSequence=existing?Number(sessions.getRange(row,SESSION_HEADERS.indexOf('sequence')+1).getValue()):0;
+    if(s.sequence>=oldSequence){s.last_received_at=now;s.mean_reaction_ms=s.decisions?Math.round(s.reaction_total_ms/s.decisions):'';sessions.getRange(row,1,1,SESSION_HEADERS.length).setValues([SESSION_HEADERS.map(h=>safe_(s[h]))]);}
+    SpreadsheetApp.flush();
+    receipts.appendRow([b.batch_id,now]);
+    SpreadsheetApp.flush();
+    return json_({ok:true});
+  }catch(error){console.error(String(error));return json_({ok:false});}
+  finally {if(lock.hasLock())lock.releaseLock();}
+}
+function json_(data){return ContentService.createTextOutput(JSON.stringify(data)).setMimeType(ContentService.MimeType.JSON);}
+function doGet(e) {
+  const p=e&&e.parameter||{};
+  if(!p.callback)return json_({service:'Door study collector',ready:!!PropertiesService.getScriptProperties().getProperty('SHEET_ID')});
+  // JSONP returns only an opaque receipt, never participant or game records.
+  if(!/^receipt_[a-f0-9]{32}$/.test(p.callback)||!uuid_(p.batch_id))return json_({ok:false});
+  let saved=false;
+  try{saved=!!find_(book_().getSheetByName('Receipts'),p.batch_id);}catch(error){console.error(String(error));}
+  return ContentService.createTextOutput(p.callback+'('+JSON.stringify({batch_id:p.batch_id,saved})+');').setMimeType(ContentService.MimeType.JAVASCRIPT);
 }
