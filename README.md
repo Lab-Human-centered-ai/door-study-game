@@ -60,3 +60,9 @@ Run setup() once in the new Apps Script project, then deploy as a web app execut
 Slow uploads no longer stop after three attempts or 45 seconds. Upload/receipt confirmation has a 45-second request budget; JSONP receipts allow 15 seconds. Failed batches remain durable and retry with capped backoff. After 60 seconds a backup option appears while automatic saving continues. Receipt confirmation still gates SAVE COMPLETE. Assets use a version query to refresh cached client code.
 
 Live verification used participant_id TEST_SAVE_REPAIR_20261016 (exclude from analysis): the collector acknowledged its write after 10.7 seconds, and a subsequent matching receipt confirmed it after 13.8 seconds. These are observed timings, not a delivery guarantee.
+
+## Collector build door-study-20261016.1 / web-1.7.8 (not deployed)
+
+Deploy the updated docs/code.gs and run setup() before publishing the web client. Setup removes consent_version, appends separate reason and phase columns to Events and Sessions, backfills outcomes from existing details, and refreshes Decisions using FILTER to preserve mixed data types. The health endpoint exposes a build identifier and column lists so the active deployment can be checked.
+
+The client now requires the matching collector build and batch identity before confirming saves. An outdated collector or permanent validation/schema error keeps the backup and displays a connection issue instead of retrying silently forever. Receipt callbacks remain harmless for two minutes after cancellation to handle Google's late JSONP responses; collector JSONP also guards callbacks. Transient failures retain the outbox and retry.

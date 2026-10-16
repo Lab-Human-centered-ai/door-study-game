@@ -42,10 +42,10 @@ class StudyLogger {
   }
   receipt(id,signal){return new Promise((resolve,reject)=>{
     const callback='receipt_'+crypto.randomUUID().replaceAll('-',''),script=document.createElement('script');
-    const cleanup=()=>{clearTimeout(timer);script.remove();delete window[callback];signal?.removeEventListener('abort',cancel);};
+    const cleanup=()=>{clearTimeout(timer);script.remove();window[callback]=()=>{};setTimeout(()=>{delete window[callback];},120000);signal?.removeEventListener('abort',cancel);};
     const cancel=()=>{cleanup();reject(Error('Receipt cancelled'));};
-    const timer=setTimeout(()=>{cleanup();reject(Error('Receipt timeout'));},15000);
-    window[callback]=data=>{cleanup();resolve(data.saved===true&&data.batch_id===id&&data.schema==='demographics-v2');};
+    const timer=setTimeout(()=>{cleanup();reject(Error('Receipt timeout'));},30000);
+    window[callback]=data=>{cleanup();if(data.schema==='demographics-v2'&&data.build!=='door-study-20261016.1'){reject(Object.assign(Error('Collector update required'),{code:'COLLECTOR_UPDATE_REQUIRED'}));return;}resolve(data.saved===true&&data.batch_id===id&&data.schema==='demographics-v2'&&data.build==='door-study-20261016.1');};
     script.onerror=()=>{cleanup();reject(Error('Receipt unavailable'));};
     if(signal?.aborted){cancel();return;}
     signal?.addEventListener('abort',cancel,{once:true});
@@ -62,7 +62,7 @@ class StudyLogger {
     });
     const upload=async()=>{
       const response=await fetch(this.endpoint,{method:'POST',mode:'cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body,keepalive:new TextEncoder().encode(body).length<60000,signal});
-      if(response.ok){const result=await response.json();if(result.ok===true&&result.schema==='demographics-v2')return true;}
+      if(response.ok){const result=await response.json();if(result.schema==='demographics-v2'&&result.build!=='door-study-20261016.1')throw Object.assign(Error('Collector update required'),{code:'COLLECTOR_UPDATE_REQUIRED'});if(result.ok===false&&result.error_code&&result.error_code!=='TEMPORARY_FAILURE')throw Object.assign(Error('Collector rejected batch'),{code:result.error_code});if(result.ok===true&&result.schema==='demographics-v2'&&result.build==='door-study-20261016.1'&&result.batch_id===batch.batch_id)return true;}
       throw Error('No upload acknowledgment');
     };
     const confirm=async()=>{
@@ -70,7 +70,7 @@ class StudyLogger {
       await wait(1000);
       for(let attempt=0;attempt<3;attempt++){
         if(this.paused)throw Error('Checks paused');
-        try{if(await this.receipt(batch.batch_id,signal))return true;}catch{if(signal.aborted)throw Error('Cancelled');}
+        try{if(await this.receipt(batch.batch_id,signal))return true;}catch(error){if(error.code==='COLLECTOR_UPDATE_REQUIRED')throw error;if(signal.aborted)throw Error('Cancelled');}
         if(attempt<2)await wait(4000);
       }
       throw Error('Receipt not confirmed');
@@ -81,7 +81,7 @@ class StudyLogger {
   async flush(){
     if(this.paused||this.busy||!this.endpoint||!this.queue.length)return;
     clearTimeout(this.retryTimer);this.retryTimer=null;this.busy=true;
-    this.saveState={...this.saveState,state:'uploading',deadline:Date.now()+45000};this.status('Sending your study data. Please keep this tab open.');
+    this.saveState={...this.saveState,state:'uploading',deadline:Date.now()+60000};this.status('Sending your study data. Please keep this tab open.');
     let succeeded=false;
     try{
       // Combine consecutive events from one session to reduce Apps Script requests.
@@ -94,7 +94,7 @@ class StudyLogger {
       let acknowledged=false;
       // A previous request may already have saved this batch. Confirm before resending.
       if(first.frozen){
-        try{acknowledged=await this.receipt(batch.batch_id);}catch{}
+        try{acknowledged=await this.receipt(batch.batch_id);}catch(error){if(error.code==='COLLECTOR_UPDATE_REQUIRED')throw error;}
         if(this.paused&&!acknowledged)return;
       }
       if(!acknowledged){if(this.paused)return;await this.uploadAndConfirm(batch,body);}
@@ -102,7 +102,14 @@ class StudyLogger {
       if(!this.queue.length){clearTimeout(this.finishTimer);this.finishTimer=null;this.paused=false;}
       if(this.paused){this.pause();return;}
       this.saveState={state:this.queue.length?'pending':'saved',deadline:null,failed:this.queue.length?this.saveState.failed:false};this.status();
-    }catch{
+    }catch(error){
+      const causes=error.errors||[error];
+      if(causes.some(cause=>['COLLECTOR_UPDATE_REQUIRED','SCHEMA_MISMATCH','SETUP_REQUIRED','INVALID_BATCH'].includes(cause.code))){
+        this.paused=true;clearTimeout(this.finishTimer);this.finishTimer=null;
+        this.saveState={state:'blocked',deadline:null,failed:true};
+        this.status('The saving connection needs an update. Your records are kept in this browser. Please download a backup.');
+        return;
+      }
       if(this.paused)return;
       const retryMs=Math.min(15000,2000*2**Math.min(this.failures++,3));
       this.saveState={...this.saveState,state:'retry',deadline:Date.now()+retryMs,failed:true};
