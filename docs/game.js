@@ -1,26 +1,25 @@
 'use strict';
 const $=id=>document.getElementById(id), cfg=window.STUDY_CONFIG;
 let saveState={state:'idle',deadline:null,failed:false};
-function renderSaveCountdown(){
-  const active=Boolean(cfg.endpoint)&&Boolean(saveState.deadline);
-  $('save-countdown').hidden=!active;
-  if(active){
-    const seconds=Math.max(0,Math.ceil((saveState.deadline-Date.now())/1000));
-    const label=saveState.state==='retry'?'Next save attempt in':saveState.state==='confirming'?'Confirmation check ends in':'Upload attempt ends in';
-    $('save-countdown').textContent=`${label} ${seconds}s`;
-  }
-}
-setInterval(renderSaveCountdown,250);
+function renderSaveCountdown(){$('save-countdown').hidden=true;}
+function loggerBusy(state){return ['uploading','confirming'].includes(state?.state);}
 function updateSaveStatus(message,state){
   if(state)saveState=state;
-  $('save-status').textContent=message;
-  $('finish-save-status').textContent=message;
   const saved=Boolean(cfg.endpoint)&&message.startsWith('Saved to Google Sheets.');
   $('save-beacon').classList.toggle('saved',saved);
-  $('finish-save-title').textContent=saved?'SAVE COMPLETE. YOU MAY LEAVE':cfg.endpoint?'DO NOT LEAVE THIS TAB':'PREVIEW RUN. KEEP A BACKUP';
-  $('finish-save-help').textContent=saved?'Your study data has been received. Thank you for staying.':cfg.endpoint?'Keep this tab open until SAVE COMPLETE appears. Saving retries automatically; if it cannot finish, download a data backup below.':'This preview is not connected to Google Sheets. Download a data backup to keep your results.';
-  $('again').disabled=Boolean(cfg.endpoint)&&!saved;
-  $('save-fallback').hidden=saved||!saveState.failed;
+  const paused=saveState.state==='paused';
+  $('save-spinner').hidden=!cfg.endpoint||saved||paused;
+  $('save-beacon').setAttribute('aria-busy',String(Boolean(cfg.endpoint)&&!saved&&!paused));
+  const waiting='This might take a while. We appreciate your patience. Please keep this tab open until saving is complete.';
+  const displayed=cfg.endpoint&&!saved&&!paused?waiting:message;
+  $('save-status').textContent=displayed;
+  $('finish-save-status').textContent=displayed;
+  $('finish-save-status').hidden=Boolean(cfg.endpoint)&&!saved;
+  $('finish-save-title').textContent=paused?'Saving is taking longer than expected':saved?'SAVE COMPLETE. YOU MAY LEAVE':cfg.endpoint?'Saving your study data':'PREVIEW RUN. KEEP A BACKUP';
+  $('finish-save-help').textContent=paused?'Thank you for your patience. We could not confirm every record yet. Please download a backup before leaving, or choose Retry saving.':saved?'Your study data has been received. Thank you for staying.':cfg.endpoint?waiting:'This preview is not connected to Google Sheets. Download a data backup to keep your results.';
+  $('again').disabled=Boolean(cfg.endpoint)&&!saved&&!paused;
+  $('retry').disabled=loggerBusy(state);
+  $('save-fallback').hidden=saved||!paused;
   renderSaveCountdown();
 }
 const logger=new StudyLogger(cfg.endpoint,updateSaveStatus);
@@ -60,13 +59,18 @@ const musicReady=new Promise((resolve,reject)=>{
 Promise.all([...Object.values(assets).map(img=>img.decode()),musicReady]).then(()=>{
   ready=true;$('setup').textContent=setupMessage;enable();
 }).catch(()=>{$('setup').textContent='Game images or music could not load. Please reload before starting.';});
-function enable(){$('start').disabled=!ready||starting||!$('consent').checked;}
+function demographics(){return {participant_gender:document.querySelector('input[name=gender]:checked')?.value,participant_age:Number($('age').value)};}
+function validDemographics(){const d=demographics();return ['man','woman','other'].includes(d.participant_gender)&&/^[0-9]{1,3}$/.test($('age').value.trim())&&Number.isInteger(d.participant_age)&&d.participant_age>=1&&d.participant_age<=120;}
+function enable(){$('start').disabled=!ready||starting||!$('consent').checked||!validDemographics();}
+$('age').addEventListener('input',enable);
+document.querySelectorAll('input[name=gender]').forEach(input=>input.addEventListener('change',enable));
 $('consent').onchange=enable;
 function hiddenTotal(){return hiddenMs+(hiddenAt===null?0:performance.now()-hiddenAt);}
 function snapshot(){return {...run,score,health,round:round+1,trial,elapsed_ms:Math.round(performance.now()-run.startedMono),hidden_ms:Math.round(hiddenTotal()),startedMono:undefined,config:JSON.stringify(run.settings)};}
-function record(type,extra={}){if(!run)return;run.sequence++;const event={event_id:crypto.randomUUID(),session_id:run.session_id,participant_id:run.participant_id,study_id:cfg.studyId,version:cfg.version,sequence:run.sequence,event_type:type,client_time:new Date().toISOString(),elapsed_ms:Math.round(performance.now()-run.startedMono),round:round+1,trial,score,health,...extra};logger.add(event,snapshot());}
+function record(type,extra={}){if(!run)return;run.sequence++;const event={event_id:crypto.randomUUID(),session_id:run.session_id,participant_id:run.participant_id,participant_age:run.participant_age,participant_gender:run.participant_gender,study_id:cfg.studyId,version:cfg.version,sequence:run.sequence,event_type:type,client_time:new Date().toISOString(),elapsed_ms:Math.round(performance.now()-run.startedMono),round:round+1,trial,score,health,...extra};logger.add(event,snapshot());}
 async function start(){
-  if(!ready||starting||phase!=='welcome'||!$('consent').checked)return;
+  if(!ready||starting||phase!=='welcome'||!$('consent').checked||!validDemographics())return;
+  const participantDemographics=demographics();
   starting=true;enable();$('start').textContent='Starting music…';
   lossSound.pause();lossSound.currentTime=0;soundtrack.currentTime=0;
   const playing=await playMusic();
@@ -78,10 +82,10 @@ async function start(){
   const seed=crypto.getRandomValues(new Uint32Array(1))[0];random=GameCore.rng(seed);
   const sequences=['MFN','MNF','FMN','FNM','NMF','NFM'];const sequence=cfg.genderSequence==='random'?sequences[Math.floor(random()*6)]:cfg.genderSequence;
   const condition=cfg.prompts[Math.floor(random()*cfg.prompts.length)];
-  run={session_id:crypto.randomUUID(),participant_id:$('participant').value.trim().replace(/[^a-zA-Z0-9_-]/g,'').slice(0,40)||'P-'+crypto.randomUUID().slice(0,8),study_id:cfg.studyId,version:cfg.version,started_at:new Date().toISOString(),startedMono:performance.now(),sequence:0,status:'in_progress',seed,prompt_id:condition.id,prompt_template:condition.text,gender_sequence:sequence,decisions:0,correct_count:0,followed_count:0,reaction_total_ms:0,settings:JSON.parse(JSON.stringify(cfg))};
+  run={session_id:crypto.randomUUID(),participant_id:'P-'+crypto.randomUUID(),...participantDemographics,study_id:cfg.studyId,version:cfg.version,started_at:new Date().toISOString(),startedMono:performance.now(),sequence:0,status:'in_progress',seed,prompt_id:condition.id,prompt_template:condition.text,gender_sequence:sequence,decisions:0,correct_count:0,followed_count:0,reaction_total_ms:0,settings:JSON.parse(JSON.stringify(cfg))};
   delete run.settings.endpoint;round=0;trial=0;health=100;score=0;hiddenMs=0;hiddenAt=document.hidden?performance.now():null;
   order=sequence.split('').flatMap(g=>[1,2,3].map(n=>g+n+'.png'));
-  $('welcome').hidden=true;$('result').hidden=true;$('play').hidden=false;record('session_start',{details:JSON.stringify({seed,condition,gender_sequence:sequence,config:run.settings,viewport:[innerWidth,innerHeight],input:matchMedia('(pointer:coarse)').matches?'touch':'pointer_or_keyboard',consent_version:'1'})});newMaze();logger.flush();
+  $('welcome').hidden=true;$('result').hidden=true;$('play').hidden=false;record('session_start',{details:JSON.stringify({seed,condition,gender_sequence:sequence,config:run.settings,viewport:[innerWidth,innerHeight],input:matchMedia('(pointer:coarse)').matches?'touch':'pointer_or_keyboard'})});newMaze();logger.flush();
 }
 function newMaze(){phase='maze';held.clear();trial=0;world=GameCore.maze(random);player=[0,0];enemy=[0,0];moves=0;bumps=0;mazeStart=performance.now();enemyAt=null;pursuitAt=null;mazePathLength=GameCore.path(world.grid,player,world.goal).length-1;$('maze-instruction').textContent='Reach the blue exit. Keep moving!';$('maze-panel').hidden=false;$('hall').hidden=true;record('maze_start',{details:JSON.stringify(world)});draw();}
 function updatePursuit(now){
@@ -111,8 +115,8 @@ function nextPrompt(){
   requestAnimationFrame(()=>requestAnimationFrame(()=>{if(phase!=='rendering')return;shownAt=performance.now();trialHiddenStart=hiddenTotal();phase='choice';record('prompt_shown',{...promptData,time_remaining_ms:Math.max(0,Math.round(deadline-shownAt))});document.querySelectorAll('[data-choice]').forEach(b=>b.disabled=false);}));
 }
 function choose(choice,input){if(phase!=='choice')return;const now=performance.now();if(now>=deadline){finish('timeout');return;}phase='feedback';const result=GameCore.decision(health,score,choice,promptData.correct_door,promptData.agent_suggestion,cfg.wrongPenalty),rt=Math.round(now-shownAt);health=result.health_after;score=result.score;run.decisions++;run.correct_count+=Number(result.correct);run.followed_count+=Number(result.compliance);run.reaction_total_ms+=rt;record('decision',{...promptData,...result,player_choice:choice,input_method:input,reaction_time_ms:rt,hidden_during_prompt_ms:Math.round(hiddenTotal()-trialHiddenStart),time_remaining_ms:Math.max(0,Math.round(deadline-now))});document.querySelectorAll('[data-choice]').forEach(b=>b.disabled=true);$('feedback').textContent=result.correct?'Correct door. +10 points.':`Wrong door. −${cfg.wrongPenalty} health.`;if(health<=0){finish('health_depleted');return;}setTimeout(()=>{if(phase==='feedback')nextPrompt();},350);}
-function finish(reason){if(!run||phase==='ended')return;const previous=phase;const playLoss=reason==='caught'||reason==='health_depleted';phase='ended';held.clear();soundtrack.pause();if(playLoss){lossSound.currentTime=0;lossSound.muted=soundtrack.muted;lossSound.play().catch(()=>{});}soundtrack.currentTime=0;document.body.classList.remove('playing');run.status=reason;run.ended_at=new Date().toISOString();record('session_end',{...(previous==='choice'?promptData:{}),details:JSON.stringify({reason,phase:previous,maze_moves:moves,wall_attempts:bumps})});$('play').hidden=true;$('result').hidden=false;$('result-title').textContent='Thank you for participating.';$('result-detail').textContent='Your participation in this HCI research study helps us understand how people make decisions with an assistant.';logger.flush();}
-$('start').onclick=start;$('quit').onclick=()=>finish('quit');$('again').onclick=()=>{$('result').hidden=true;$('welcome').hidden=false;phase='welcome';run=null;};$('download').onclick=$('finish-download').onclick=()=>logger.download();$('retry').onclick=()=>logger.flush();
+function finish(reason){if(!run||phase==='ended')return;const previous=phase;const playLoss=reason==='caught'||reason==='health_depleted';phase='ended';held.clear();soundtrack.pause();if(playLoss){lossSound.currentTime=0;lossSound.muted=soundtrack.muted;lossSound.play().catch(()=>{});}soundtrack.currentTime=0;document.body.classList.remove('playing');run.status=reason;run.ended_at=new Date().toISOString();record('session_end',{...(previous==='choice'?promptData:{}),details:JSON.stringify({reason,phase:previous,maze_moves:moves,wall_attempts:bumps})});$('play').hidden=true;$('result').hidden=false;$('result-title').textContent='Thank you for participating.';$('result-detail').textContent='Your participation in this HCI research study helps us understand how people make decisions with an assistant.';logger.finishSaving();logger.flush();}
+$('start').onclick=start;$('quit').onclick=()=>finish('quit');$('again').onclick=()=>{$('result').hidden=true;$('welcome').hidden=false;phase='welcome';run=null;};$('download').onclick=$('finish-download').onclick=()=>logger.download();$('retry').onclick=()=>logger.retry();
 document.querySelectorAll('[data-choice]').forEach(b=>b.onclick=e=>choose(b.dataset.choice,e.detail===0?'keyboard_button':'pointer'));
 document.querySelectorAll('[data-move]').forEach(b=>{b.onpointerdown=e=>{e.preventDefault();held.add(b.dataset.move);b.setPointerCapture(e.pointerId);move(b.dataset.move);};b.onpointerup=b.onpointercancel=()=>held.delete(b.dataset.move);});
 addEventListener('keydown',e=>{const dir={ArrowLeft:'left',ArrowRight:'right',ArrowUp:'up',ArrowDown:'down'}[e.key];if(!dir||!['maze','choice','feedback','rendering'].includes(phase))return;e.preventDefault();if(phase==='maze'){held.add(dir);move(dir);}else if(!e.repeat&&(dir==='left'||dir==='right'))choose(dir,'keyboard');});addEventListener('keyup',e=>held.delete(e.key.replace('Arrow','').toLowerCase()));addEventListener('blur',()=>held.clear());

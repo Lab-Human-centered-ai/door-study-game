@@ -38,3 +38,19 @@ Events are persisted locally first and scheduled for automatic upload within 250
 Pursuit acceleration is recorded as a supported `heartbeat` with `details.action = "pursuit_accelerated"`. Older queued `pursuit_accelerated` events are repaired on load while preserving event and batch IDs, because the deployed collector rejects unknown event types. The local `docs/code.gs` is now plain Apps Script source instead of RTF; its collector behavior is unchanged and no collector redeployment is required for these client fixes.
 
 Live verification on 2026-10-11 confirmed both test sessions in Door Game Results, including final session summaries and no duplicate event rows after repeat uploads. Exclude participant codes `TEST_AUTOSAVE_20261011` and `TEST_AUTOSAVE_FAST_20261011` from research analysis. The final test confirmed its full outbox in 7.6 seconds (two batches), compared with 24.3 seconds using separate receipts for every batch. These are observed timings, not a delivery-time guarantee. Local recovery tests covered lost responses, failed requests, retry scheduling, reload recovery, and old-event repair.
+
+## Demographics update (web-1.7.0)
+
+The start screen requires gender (man, woman, other), integer age in years (1–120), and consent. This range is input validation, not an REB eligibility rule. It displays REB 2026-058 and explains that demographics are recorded with a random participant code. Participant-supplied codes have been removed. Emailing a backup reveals the sender's address, so the screen does not promise complete anonymity.
+
+Events and Sessions now append participant_age and participant_gender. Batches with demographics validate their values and consistency across events; older queued batches remain supported with blank demographic columns. Existing columns and reaction-time records are preserved.
+
+Deployment: replace the source in the existing Google Apps Script project with docs/code.gs, run setup() against the existing spreadsheet to append headers, then update the existing web-app deployment to a new version (retain its /exec URL). Deploy this collector before publishing the updated docs/ app through the repository's GitHub Pages workflow. The local source changes alone do not update the deployed Apps Script collector.
+
+## Active collector (web-1.7.2)
+
+The canonical collector source is `docs/code.gs`; it targets spreadsheet `1e5ppc5OfJoeXG6h5lsV6Rc16XbAywZOiMMkgWikqMKA`. Use only that source in the Apps Script project. The legacy `docs/code copy.gs` is a backup, not deployment source.
+
+The configured web-app endpoint is https://script.google.com/macros/s/AKfycbw5VSDQ23w5JIwQNCahVXcwdwtiWe-bIf0r90BMNdk7qE7CKrHgUoZyv65WnY8DSh4M/exec. The client requires collector schema `demographics-v2` on POST acknowledgments or JSONP receipts. Deploy the current game.js, logger.js, config.js, index.html, and style.css together.
+
+Run setup() once in the new Apps Script project, then deploy as a web app executing as the owner with access for Anyone. Sessions and Events capture demographics even when the run ends in the maze; Decisions contains only actual door choices. Missing choice fields for maze-only runs are expected. REB is displayed on the consent screen, not stored as a data column.

@@ -1,8 +1,8 @@
 // Paste your Google Apps Script web app /exec URL between these quotes.
 window.STUDY_CONFIG = {
-  endpoint: "https://script.google.com/macros/s/AKfycbxd498n39hAo0kjajrbatNMWMi-LHajItmU-E8r7EW1SVUA4BpGjHTquWZPweCLaJbtqQ/exec",
+  endpoint: "https://script.google.com/macros/s/AKfycbw5VSDQ23w5JIwQNCahVXcwdwtiWe-bIf0r90BMNdk7qE7CKrHgUoZyv65WnY8DSh4M/exec",
   studyId: "prompt-study-v1",
-  version: "web-1.6.0",
+  version: "web-1.7.6",
   roundTimes: [90, 60, 40], // Seconds per hallway, AFTER finishing the maze.
   enemyDelayMs: 320, // Starting pursuit pace.
   enemySprintDelayMs: 120, // Faster pursuit after halfway to the exit.

@@ -1,22 +1,45 @@
-const EVENT_HEADERS = ['event_id','session_id','participant_id','study_id','version','sequence','event_type','client_time','received_at','elapsed_ms','round','trial','prompt_id','prompt_text','agent_image','agent_name','agent_gender','agent_suggestion','agent_truthful','correct_door','player_choice','correct','compliance','reaction_time_ms','hidden_during_prompt_ms','health_before','health_after','health','score','time_remaining_ms','input_method','details'];
-const SESSION_HEADERS = ['session_id','participant_id','study_id','version','started_at','last_received_at','ended_at','status','sequence','seed','prompt_id','prompt_template','gender_sequence','round','trial','decisions','correct_count','followed_count','mean_reaction_ms','score','health','elapsed_ms','hidden_ms','config'];
+const COLLECTOR_SCHEMA = 'demographics-v2';
+const TARGET_SHEET_ID = '1e5ppc5OfJoeXG6h5lsV6Rc16XbAywZOiMMkgWikqMKA';
+const EVENT_HEADERS = ['event_id','session_id','participant_id','study_id','version','sequence','event_type','client_time','received_at','elapsed_ms','round','trial','prompt_id','prompt_text','agent_image','agent_name','agent_gender','agent_suggestion','agent_truthful','correct_door','player_choice','correct','compliance','reaction_time_ms','hidden_during_prompt_ms','health_before','health_after','health','score','time_remaining_ms','input_method','details','participant_age','participant_gender'];
+const SESSION_HEADERS = ['session_id','participant_id','study_id','version','started_at','last_received_at','ended_at','status','sequence','seed','prompt_id','prompt_template','gender_sequence','round','trial','decisions','correct_count','followed_count','mean_reaction_ms','score','health','elapsed_ms','hidden_ms','config','participant_age','participant_gender'];
 function setup() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = SpreadsheetApp.openById(TARGET_SHEET_ID);
   PropertiesService.getScriptProperties().setProperty('SHEET_ID', ss.getId());
   ensureSheet_(ss, 'Events', EVENT_HEADERS);
   ensureSheet_(ss, 'Sessions', SESSION_HEADERS);
   ensureSheet_(ss, 'Receipts', ['batch_id','received_at']);
+  ensureDecisions_(ss);
 }
 function ensureSheet_(ss, name, headers) {
   const sheet = ss.getSheetByName(name) || ss.insertSheet(name);
+  // Remove the retired tracking column from existing collector tabs.
+  if((name==='Events'||name==='Sessions')&&sheet.getLastRow()>0){
+    const oldHeaders=sheet.getRange(1,1,1,sheet.getLastColumn()).getValues()[0];
+    const retired=oldHeaders.indexOf('consent_version');
+    if(retired!==-1)sheet.deleteColumn(retired+1);
+  }
+  if(sheet.getMaxColumns()<headers.length)sheet.insertColumnsAfter(sheet.getMaxColumns(),headers.length-sheet.getMaxColumns());
   if (sheet.getLastRow() === 0) {sheet.appendRow(headers);sheet.setFrozenRows(1);sheet.getRange(1,1,1,headers.length).setFontWeight('bold');}
   const actual=sheet.getRange(1,1,1,headers.length).getValues()[0];
-  if (actual.join('|')!==headers.join('|')) throw Error('Unexpected columns in '+name+'. Restore the original header row.');
+  // Append new columns without moving or overwriting historical study records.
+  const existing=actual.filter((value,index)=>index<sheet.getLastColumn());
+  while(existing.length&&existing[existing.length-1]==='')existing.pop();
+  if(existing.some((value,index)=>value!==headers[index]))throw Error('Unexpected columns in '+name+'. Check the header row.');
+  if(existing.length<headers.length)sheet.getRange(1,existing.length+1,1,headers.length-existing.length).setValues([headers.slice(existing.length)]).setFontWeight('bold');
   return sheet;
+}
+// Live view: one row per door choice, with each metric in its own column.
+function ensureDecisions_(ss) {
+  if(ss.getSheetByName('Decisions'))return;
+  const sheet=ss.insertSheet('Decisions');
+  if(sheet.getMaxColumns()<EVENT_HEADERS.length)sheet.insertColumnsAfter(sheet.getMaxColumns(),EVENT_HEADERS.length-sheet.getMaxColumns());
+  sheet.getRange(1,1).setFormula('=QUERY(Events!A:AH,"select * where G = \'decision\'",1)');
+  sheet.setFrozenRows(1);
 }
 function book_() {
   const id=PropertiesService.getScriptProperties().getProperty('SHEET_ID');
   if(!id)throw Error('Run setup() first.');
+  if(id!==TARGET_SHEET_ID)throw Error('Wrong spreadsheet configured. Run setup().');
   return SpreadsheetApp.openById(id);
 }
 function find_(sheet, id) {
@@ -42,31 +65,50 @@ function doPost(e) {
       if(!['session_start','maze_start','maze_complete','prompt_shown','decision','hallway_complete','session_end','tab_hidden','tab_visible','page_exit','heartbeat'].includes(event.event_type))throw Error('Invalid event type');
       if(event.event_type==='decision'&&(!['left','right'].includes(event.player_choice)||!Number.isFinite(event.reaction_time_ms)||event.reaction_time_ms<0))throw Error('Invalid decision');
     }
+    // Validate demographics when present; legacy sessions without them remain accepted.
+    if(s.participant_age!==undefined||s.participant_gender!==undefined){
+      if(!Number.isInteger(s.participant_age)||s.participant_age<1||s.participant_age>120||!['man','woman','other'].includes(s.participant_gender))throw Error('Invalid demographics');
+      for(const event of b.events)if(event.participant_age!==s.participant_age||event.participant_gender!==s.participant_gender)throw Error('Inconsistent demographics');
+    }
     lock.waitLock(25000);
     const ss=book_(),receipts=ensureSheet_(ss,'Receipts',['batch_id','received_at']);
-    if(find_(receipts,b.batch_id))return json_({ok:true});
+    const received=!!find_(receipts,b.batch_id);
     const events=ensureSheet_(ss,'Events',EVENT_HEADERS),sessions=ensureSheet_(ss,'Sessions',SESSION_HEADERS),now=new Date().toISOString();
     // Event-level deduplication also repairs a partial write before receipt creation.
     const seen=new Set(),rows=[];
-    b.events.forEach(event=>{if(!seen.has(event.event_id)&&!find_(events,event.event_id)){seen.add(event.event_id);rows.push(EVENT_HEADERS.map(h=>safe_(h==='received_at'?now:event[h])));}});
+    b.events.forEach(event=>{
+      if(seen.has(event.event_id))return;
+      seen.add(event.event_id);
+      const existingEvent=find_(events,event.event_id);
+      if(!existingEvent)rows.push(EVENT_HEADERS.map(h=>safe_(h==='received_at'?now:event[h])));
+      // Recover fields dropped by an older collector when the original batch retries.
+      else if(s.participant_age!==undefined||s.participant_gender!==undefined){
+        const row=existingEvent.getRow();
+        ['participant_age','participant_gender'].forEach(h=>{
+          const cell=events.getRange(row,EVENT_HEADERS.indexOf(h)+1);
+          if(cell.getValue()==='')cell.setValue(safe_(event[h]));
+        });
+      }
+    });
     if(rows.length)events.getRange(events.getLastRow()+1,1,rows.length,EVENT_HEADERS.length).setValues(rows);
     const existing=find_(sessions,s.session_id),row=existing?existing.getRow():sessions.getLastRow()+1;
     const oldSequence=existing?Number(sessions.getRange(row,SESSION_HEADERS.indexOf('sequence')+1).getValue()):0;
     if(s.sequence>=oldSequence){s.last_received_at=now;s.mean_reaction_ms=s.decisions?Math.round(s.reaction_total_ms/s.decisions):'';sessions.getRange(row,1,1,SESSION_HEADERS.length).setValues([SESSION_HEADERS.map(h=>safe_(s[h]))]);}
     SpreadsheetApp.flush();
-    receipts.appendRow([b.batch_id,now]);
+    ensureDecisions_(ss);
+    if(!received)receipts.appendRow([b.batch_id,now]);
     SpreadsheetApp.flush();
-    return json_({ok:true});
+    return json_({ok:true,schema:COLLECTOR_SCHEMA});
   }catch(error){console.error(String(error));return json_({ok:false});}
   finally {if(lock.hasLock())lock.releaseLock();}
 }
 function json_(data){return ContentService.createTextOutput(JSON.stringify(data)).setMimeType(ContentService.MimeType.JSON);}
 function doGet(e) {
   const p=e&&e.parameter||{};
-  if(!p.callback)return json_({service:'Door study collector',ready:!!PropertiesService.getScriptProperties().getProperty('SHEET_ID')});
+  if(!p.callback)return json_({service:'Door study collector',schema:COLLECTOR_SCHEMA,ready:!!PropertiesService.getScriptProperties().getProperty('SHEET_ID')});
   // JSONP returns only an opaque receipt, never participant or game records.
   if(!/^receipt_[a-f0-9]{32}$/.test(p.callback)||!uuid_(p.batch_id))return json_({ok:false});
   let saved=false;
   try{saved=!!find_(book_().getSheetByName('Receipts'),p.batch_id);}catch(error){console.error(String(error));}
-  return ContentService.createTextOutput(p.callback+'('+JSON.stringify({batch_id:p.batch_id,saved})+');').setMimeType(ContentService.MimeType.JAVASCRIPT);
+  return ContentService.createTextOutput(p.callback+'('+JSON.stringify({batch_id:p.batch_id,saved,schema:COLLECTOR_SCHEMA})+');').setMimeType(ContentService.MimeType.JAVASCRIPT);
 }
