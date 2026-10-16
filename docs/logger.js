@@ -15,7 +15,7 @@ class StudyLogger {
       }
     }
     if(repaired)this.persist();
-    addEventListener('online',()=>{if(!this.paused)this.flush();});
+    addEventListener('online',()=>this.retry());
     this.status();
   }
   read(key){try{const value=JSON.parse(localStorage.getItem(key)||'[]');return Array.isArray(value)?value:[];}catch{return [];}}
@@ -23,15 +23,15 @@ class StudyLogger {
   add(event,session){const batch={batch_id:crypto.randomUUID(),events:[event],session};this.queue.push(batch);this.archive.push(batch);this.persist();this.status();if(!this.paused&&!this.busy&&!this.retryTimer&&this.endpoint)this.retryTimer=setTimeout(()=>this.flush(),250);}
   status(message){this.onStatus((message||(!this.endpoint?'Demo mode. Data stays in this browser.':this.queue.length?`${this.queue.length} record(s) waiting for Google Sheets.`:'Saved to Google Sheets.'))+(this.storageFailed?' Browser backup unavailable. Download a backup before leaving.':''),{...this.saveState});}
   pause(){
+    // Slow service must not stop delivery. Keep uploading and checking receipts.
     if(!this.queue.length)return;
-    this.paused=true;clearTimeout(this.retryTimer);this.retryTimer=null;
-    clearTimeout(this.finishTimer);this.finishTimer=null;
-    this.saveState={state:'paused',deadline:null,failed:true};
-    this.status('Confirmation is unavailable. Download a backup or choose Retry saving.');
+    this.saveState={...this.saveState,slow:true,failed:true};
+    this.status('Saving is still in progress. Your backup is available below.');
+    if(!this.busy&&!this.retryTimer)this.retryTimer=setTimeout(()=>this.flush(),2000);
   }
   finishSaving(){
     if(this.finishTimer||!this.queue.length)return;
-    this.finishTimer=setTimeout(()=>this.pause(),45000);
+    this.finishTimer=setTimeout(()=>this.pause(),60000);
   }
   retry(){
     if(this.busy)return;
@@ -44,7 +44,7 @@ class StudyLogger {
     const callback='receipt_'+crypto.randomUUID().replaceAll('-',''),script=document.createElement('script');
     const cleanup=()=>{clearTimeout(timer);script.remove();delete window[callback];signal?.removeEventListener('abort',cancel);};
     const cancel=()=>{cleanup();reject(Error('Receipt cancelled'));};
-    const timer=setTimeout(()=>{cleanup();reject(Error('Receipt timeout'));},5000);
+    const timer=setTimeout(()=>{cleanup();reject(Error('Receipt timeout'));},15000);
     window[callback]=data=>{cleanup();resolve(data.saved===true&&data.batch_id===id&&data.schema==='demographics-v2');};
     script.onerror=()=>{cleanup();reject(Error('Receipt unavailable'));};
     if(signal?.aborted){cancel();return;}
@@ -71,7 +71,7 @@ class StudyLogger {
       for(let attempt=0;attempt<3;attempt++){
         if(this.paused)throw Error('Checks paused');
         try{if(await this.receipt(batch.batch_id,signal))return true;}catch{if(signal.aborted)throw Error('Cancelled');}
-        if(attempt<2)await wait(1500);
+        if(attempt<2)await wait(4000);
       }
       throw Error('Receipt not confirmed');
     };
@@ -81,7 +81,7 @@ class StudyLogger {
   async flush(){
     if(this.paused||this.busy||!this.endpoint||!this.queue.length)return;
     clearTimeout(this.retryTimer);this.retryTimer=null;this.busy=true;
-    this.saveState={...this.saveState,state:'uploading',deadline:Date.now()+10000};this.status('Sending your study data. Please keep this tab open.');
+    this.saveState={...this.saveState,state:'uploading',deadline:Date.now()+45000};this.status('Sending your study data. Please keep this tab open.');
     let succeeded=false;
     try{
       // Combine consecutive events from one session to reduce Apps Script requests.
@@ -104,9 +104,8 @@ class StudyLogger {
       this.saveState={state:this.queue.length?'pending':'saved',deadline:null,failed:this.queue.length?this.saveState.failed:false};this.status();
     }catch{
       if(this.paused)return;
-      if(this.failures>=2){this.pause();return;}
       const retryMs=Math.min(15000,2000*2**Math.min(this.failures++,3));
-      this.saveState={state:'retry',deadline:Date.now()+retryMs,failed:true};
+      this.saveState={...this.saveState,state:'retry',deadline:Date.now()+retryMs,failed:true};
       this.status('This might take a while. We appreciate your patience.');
       this.retryTimer=setTimeout(()=>this.flush(),retryMs);
     }

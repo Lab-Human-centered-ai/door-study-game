@@ -19,7 +19,7 @@ function updateSaveStatus(message,state){
   $('finish-save-help').textContent=paused?'Thank you for your patience. We could not confirm every record yet. Please download a backup before leaving, or choose Retry saving.':saved?'Your study data has been received. Thank you for staying.':cfg.endpoint?waiting:'This preview is not connected to Google Sheets. Download a data backup to keep your results.';
   $('again').disabled=Boolean(cfg.endpoint)&&!saved&&!paused;
   $('retry').disabled=loggerBusy(state);
-  $('save-fallback').hidden=saved||!paused;
+  $('save-fallback').hidden=saved||!(paused||saveState.slow);
   renderSaveCountdown();
 }
 const logger=new StudyLogger(cfg.endpoint,updateSaveStatus);

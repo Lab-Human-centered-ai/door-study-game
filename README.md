@@ -54,3 +54,9 @@ The canonical collector source is `docs/code.gs`; it targets spreadsheet `1e5ppc
 The configured web-app endpoint is https://script.google.com/macros/s/AKfycbw5VSDQ23w5JIwQNCahVXcwdwtiWe-bIf0r90BMNdk7qE7CKrHgUoZyv65WnY8DSh4M/exec. The client requires collector schema `demographics-v2` on POST acknowledgments or JSONP receipts. Deploy the current game.js, logger.js, config.js, index.html, and style.css together.
 
 Run setup() once in the new Apps Script project, then deploy as a web app executing as the owner with access for Anyone. Sessions and Events capture demographics even when the run ends in the maze; Decisions contains only actual door choices. Missing choice fields for maze-only runs are expected. REB is displayed on the consent screen, not stored as a data column.
+
+## Save recovery (web-1.7.7)
+
+Slow uploads no longer stop after three attempts or 45 seconds. Upload/receipt confirmation has a 45-second request budget; JSONP receipts allow 15 seconds. Failed batches remain durable and retry with capped backoff. After 60 seconds a backup option appears while automatic saving continues. Receipt confirmation still gates SAVE COMPLETE. Assets use a version query to refresh cached client code.
+
+Live verification used participant_id TEST_SAVE_REPAIR_20261016 (exclude from analysis): the collector acknowledged its write after 10.7 seconds, and a subsequent matching receipt confirmed it after 13.8 seconds. These are observed timings, not a delivery guarantee.
